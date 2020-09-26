@@ -9,16 +9,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import java.text.SimpleDateFormat;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 
 // Fragmentクラスを継承
 public class PlanFragment extends Fragment {
@@ -53,6 +52,15 @@ public class PlanFragment extends Fragment {
     View.OnClickListener planOnClickListener = new View.OnClickListener(){
         @Override
         public void onClick(View v) {
+        }
+    };
+
+    // planテキスト長押しリスナー
+    View.OnLongClickListener planOnLongClickListener = new View.OnLongClickListener(){
+        @Override
+        public boolean onLongClick(View v) {
+
+            // どのプランか判定
             int iBox = -1;
             for (int i = 0; i < textViewArray.length; i++) {
                 if (textViewArray[i].hashCode() == v.hashCode()) {
@@ -61,15 +69,6 @@ public class PlanFragment extends Fragment {
                     break;
                 }
             }
-            Toast.makeText(getContext(), String.valueOf(iBox), Toast.LENGTH_LONG).show();
-        }
-    };
-
-    // planテキスト長押しリスナー
-    View.OnLongClickListener planOnLongClickListener = new View.OnLongClickListener(){
-        @Override
-        public boolean onLongClick(View v) {
-            Log.d("APP", "onLongClick");
 
             // 編集ダイアログを表示する // 引数itemidを渡す必要がある
             DialogFragment newFragment = new PlanAddDialogFragment();

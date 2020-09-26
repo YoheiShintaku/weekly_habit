@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         // create plan table
         sql = String.format(
                 "create table if not exists plan ("
-                        + "itemid INTEGER PRIMARY KEY"
+                        + "itemid TEXT PRIMARY KEY"
                         + ", isvalid INTEGER"  // ex.: 1  // 有効or無効 編集すると無効化して新しいid発行
                         + ", name TEXT"  // ex.: "walking"
                         + ", dow TEXT"  // ex.: "1,3,5"
