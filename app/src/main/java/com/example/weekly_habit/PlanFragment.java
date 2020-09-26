@@ -2,6 +2,7 @@ package com.example.weekly_habit;
 
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -46,7 +47,9 @@ public class PlanFragment extends Fragment {
         //return inflater.inflate(R.layout.fragment_plan, container, false);
     }
 
-    // テキストViewクリック時の動作
+    TextView[] textViewArray;
+
+    // planテキストクリック時の動作
     View.OnClickListener planOnClickListener = new View.OnClickListener(){
         @Override
         public void onClick(View v) {
@@ -62,7 +65,17 @@ public class PlanFragment extends Fragment {
         }
     };
 
-    TextView[] textViewArray;
+    // 追加ボタンクリックリスナー
+    View.OnClickListener addPlanOnClickListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View v) {
+            // 登録画面ダイアログを表示する
+            DialogFragment newFragment = new PlanAddDialogFragment();
+            newFragment.show(getFragmentManager(), "test");
+        }
+    };
+
+
     void setDate(View view) {
         planLinearLayout = view.findViewById(R.id.planLinearLayout);
         planLinearLayout.setGravity(1);
@@ -97,6 +110,7 @@ public class PlanFragment extends Fragment {
         imageButton.setImageResource(R.drawable.plus);
         imageButton.setLayoutParams(new LinearLayout.LayoutParams(200, 200));
         imageButton.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        imageButton.setOnClickListener(addPlanOnClickListener);
         planLinearLayout.addView(imageButton);
     }
 
