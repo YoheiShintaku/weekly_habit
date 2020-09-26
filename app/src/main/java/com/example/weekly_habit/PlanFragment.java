@@ -49,7 +49,7 @@ public class PlanFragment extends Fragment {
 
     TextView[] textViewArray;
 
-    // planテキストクリック時の動作
+    // planテキストクリックリスナー
     View.OnClickListener planOnClickListener = new View.OnClickListener(){
         @Override
         public void onClick(View v) {
@@ -62,6 +62,21 @@ public class PlanFragment extends Fragment {
                 }
             }
             Toast.makeText(getContext(), String.valueOf(iBox), Toast.LENGTH_LONG).show();
+        }
+    };
+
+    // planテキスト長押しリスナー
+    View.OnLongClickListener planOnLongClickListener = new View.OnLongClickListener(){
+        @Override
+        public boolean onLongClick(View v) {
+            Log.d("APP", "onLongClick");
+
+            // 編集ダイアログを表示する // 引数itemidを渡す必要がある
+            DialogFragment newFragment = new PlanAddDialogFragment();
+            newFragment.show(getFragmentManager(), "test");
+
+            return false;
+
         }
     };
 
@@ -101,6 +116,7 @@ public class PlanFragment extends Fragment {
 
             // リスナーを登録
             textView.setOnClickListener(planOnClickListener);
+            textView.setOnLongClickListener(planOnLongClickListener);
 
             planLinearLayout.addView(textView);
             textViewArray[i] = textView;
