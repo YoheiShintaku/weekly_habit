@@ -15,6 +15,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 
@@ -45,6 +46,23 @@ public class PlanFragment extends Fragment {
         //return inflater.inflate(R.layout.fragment_plan, container, false);
     }
 
+    // テキストViewクリック時の動作
+    View.OnClickListener planOnClickListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View v) {
+            int iBox = -1;
+            for (int i = 0; i < textViewArray.length; i++) {
+                if (textViewArray[i].hashCode() == v.hashCode()) {
+                    //Toast.makeText(getContext(), string, Toast.LENGTH_LONG).show();
+                    iBox = i;
+                    break;
+                }
+            }
+            Toast.makeText(getContext(), String.valueOf(iBox), Toast.LENGTH_LONG).show();
+        }
+    };
+
+    TextView[] textViewArray;
     void setDate(View view) {
         planLinearLayout = view.findViewById(R.id.planLinearLayout);
         planLinearLayout.setGravity(1);
@@ -55,16 +73,24 @@ public class PlanFragment extends Fragment {
         //Log.d("debug","setDate");
         LinearLayout.LayoutParams textLayoutParams = new LinearLayout.LayoutParams(width, height);
         textLayoutParams.setMargins(30, 20, 30, 0);
-        for (int i = 0; i < 7; i++) {
+        int numOfPlan=10;
+        textViewArray = new TextView[numOfPlan];
+        for (int i = 0; i < numOfPlan; i++) {
             textView = new TextView(getContext());
 
             textView.setText(String.valueOf(i));
             textView.setTextSize(textsize);
             textView.setBackgroundColor(Color.LTGRAY);
+
             //textView.setGravity(gravity);  // center
             //textView.setBackground(getResources().getDrawable( R.drawable.view_frame ));
             textView.setLayoutParams(textLayoutParams);
+
+            // リスナーを登録
+            textView.setOnClickListener(planOnClickListener);
+
             planLinearLayout.addView(textView);
+            textViewArray[i] = textView;
         }
 
         ImageButton imageButton = new ImageButton(getContext());
