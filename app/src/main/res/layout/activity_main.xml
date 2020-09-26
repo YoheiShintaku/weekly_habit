@@ -11,40 +11,42 @@
     <LinearLayout
         android:id="@+id/tabLinearLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="90"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="horizontal">
 
         <Button
             android:id="@+id/button1"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:onClick="button1_onClick"
-            android:text="Button1" />
+            android:text="PLAN" />
 
         <Button
             android:id="@+id/button2"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:onClick="button2_onClick"
-            android:text="Button2" />
+            android:text="DO" />
 
         <Button
             android:id="@+id/button3"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:onClick="button3_onClick"
-            android:text="Button3" />
+            android:text="CHECK" />
 
     </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/mainLinearLayout"
+    <FrameLayout
+        android:id="@+id/topFrameLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="10"
-        android:orientation="horizontal"></LinearLayout>
+        android:layout_height="0dp"
+        android:layout_weight="9">
+
+    </FrameLayout>
+
 </LinearLayout>
