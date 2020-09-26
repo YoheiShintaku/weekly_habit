@@ -1,5 +1,7 @@
 package com.example.weekly_habit;
 
+import android.graphics.Color;
+import android.support.annotation.ColorInt;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -8,6 +10,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -41,23 +46,32 @@ public class PlanFragment extends Fragment {
     }
 
     void setDate(View view) {
+        planLinearLayout = view.findViewById(R.id.planLinearLayout);
+        planLinearLayout.setGravity(1);
         TextView textView;
         int textsize = 30;
-        int gravity = 1;
         int width = ViewGroup.LayoutParams.MATCH_PARENT;
         int height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        planLinearLayout = view.findViewById(R.id.planLinearLayout);
         //Log.d("debug","setDate");
+        LinearLayout.LayoutParams textLayoutParams = new LinearLayout.LayoutParams(width, height);
+        textLayoutParams.setMargins(30, 20, 30, 0);
         for (int i = 0; i < 7; i++) {
             textView = new TextView(getContext());
 
             textView.setText(String.valueOf(i));
             textView.setTextSize(textsize);
-            textView.setGravity(gravity);  // center
+            textView.setBackgroundColor(Color.LTGRAY);
+            //textView.setGravity(gravity);  // center
             //textView.setBackground(getResources().getDrawable( R.drawable.view_frame ));
-            textView.setLayoutParams(new ViewGroup.LayoutParams(width, height));
+            textView.setLayoutParams(textLayoutParams);
             planLinearLayout.addView(textView);
         }
+
+        ImageButton imageButton = new ImageButton(getContext());
+        imageButton.setImageResource(R.drawable.plus);
+        imageButton.setLayoutParams(new LinearLayout.LayoutParams(200, 200));
+        imageButton.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        planLinearLayout.addView(imageButton);
     }
 
     /*
