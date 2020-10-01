@@ -67,23 +67,30 @@ public class MainActivity extends AppCompatActivity {
                         + ", interval INTEGER"  // ex.: 1  // 週間隔
                         + ", starttime TEXT"  // ex.: "10:30"
                         + ", timewidth INTEGER"  // ex.: 15 // minute
+                        + ", startdate TEXT"  // ex.: 20200918
+                        + ", version INTEGER"  // ex.: 1
                         + ")"
         );
         try(SQLiteDatabase db = helper.getWritableDatabase()) {
             db.execSQL(sql);
         }
 
-        // debug: insert test data.
-        // terminalでやる
-        /*
-        int itemid = 0;
-        int isvalid = 1;
-        String name = "test";
-        sql = String.format("insert into plan (itemid, isvalid, name) values ('%d', '%d', %s');", itemid, isvalid, name);
-        try (SQLiteDatabase db = helper.getWritableDatabase()) {
+        // create do table
+        sql = String.format(
+                "create table if not exists do ("
+                        + "itemid TEXT"
+                        + ", version TEXT"
+                        + ", name TEXT"
+                        + ", starttime TEXT"
+                        + ", timewidth INTEGER"
+                        + ", date TEXT"
+                        + ", week TEXT"//検索用
+                        + ", isdone INTEGER"
+                        + ")"
+        );
+        try(SQLiteDatabase db = helper.getWritableDatabase()) {
             db.execSQL(sql);
         }
-        */
     }
 
     public void addPlanFramgent(){

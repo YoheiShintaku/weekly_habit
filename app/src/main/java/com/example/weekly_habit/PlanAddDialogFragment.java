@@ -80,9 +80,10 @@ public class PlanAddDialogFragment extends DialogFragment {
             String sql="";
             Cursor cursor;
 
-            // itemidは登録日時
-            DateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
-            String itemid = formatter.format(new Date());
+
+            String itemid = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());// itemidは登録日時
+            String startdate = new SimpleDateFormat("yyyyMMdd").format(new Date());// 作成/編集日をあてておく
+            Integer version = 1;// 登録時は1。編集ごとに増やしていく
 
             // 設定内容を取得
             String name = EditTextName.getText().toString();
@@ -91,13 +92,13 @@ public class PlanAddDialogFragment extends DialogFragment {
             String starttime = EditTextTimeStart.getText().toString();
             Integer timewidth = Integer.parseInt(EditTextTimeLength.getText().toString());
             String dow = "";
-            if (CheckBoxMon.isChecked()){ dow += ",Mon"; }
-            if (CheckBoxTue.isChecked()){ dow += ",Tue"; }
-            if (CheckBoxWed.isChecked()){ dow += ",Wed"; }
-            if (CheckBoxThu.isChecked()){ dow += ",Thu"; }
-            if (CheckBoxFri.isChecked()){ dow += ",Fri"; }
-            if (CheckBoxSat.isChecked()){ dow += ",Sat"; }
-            if (CheckBoxSun.isChecked()){ dow += ",Sun"; }
+            if (CheckBoxMon.isChecked()){ dow += ",2"; }
+            if (CheckBoxTue.isChecked()){ dow += ",3"; }
+            if (CheckBoxWed.isChecked()){ dow += ",4"; }
+            if (CheckBoxThu.isChecked()){ dow += ",5"; }
+            if (CheckBoxFri.isChecked()){ dow += ",6"; }
+            if (CheckBoxSat.isChecked()){ dow += ",7"; }
+            if (CheckBoxSun.isChecked()){ dow += ",1"; }
             dow = dow.substring(1);//初めのカンマを除く
 
             //カンマ区切りの練習
@@ -105,14 +106,16 @@ public class PlanAddDialogFragment extends DialogFragment {
 
             // tableにinsert
             sql = String.format(
-                    "insert into plan (itemid, isvalid, name, dow, interval, starttime, timewidth) values ('%s', %d, '%s', '%s', %d, '%s', %d);",
+                    "insert into plan (itemid, isvalid, name, dow, interval, starttime, timewidth, startdate, version) values ('%s', %d, '%s', '%s', %d, '%s', %d, '%s', %d);",
                     itemid,
                     isvalid,
                     name,
                     dow,
                     interval,
                     starttime,
-                    timewidth
+                    timewidth,
+                    startdate,
+                    version
             );
             // update
             // sql = String.format("update diary set diary = '%s' where date = '%s'", diaryString, dateString);
