@@ -45,25 +45,16 @@ public class DoFragment extends Fragment {
         // 有効プラン読み取り
         Integer n = 100;
         String[] itemidAll = new String[n];// all record
-        String itemid;// an item
         String[] nameAll = new String[n];
-        String name;
         Integer[] isvalidAll = new Integer[n];
-        Integer isvalid;
         String[] dowAll = new String[n];
-        String dow;
         String[] dowSplited;// splited by comma
         Integer[] intervalAll = new Integer[n];
-        Integer interval;
         String[] starttimeAll = new String[n];
-        String starttime;
         Integer[] timewidthAll = new Integer[n];
-        Integer timewidth;
         String[] startdateAll = new String[n];
-        String startdate=null;
         Integer[] versionAll = new Integer[n];
-        Integer version;
-        Integer i = -1;
+        Integer i;
         Integer planCount = -1;
         Calendar calendar;
         //
@@ -73,10 +64,9 @@ public class DoFragment extends Fragment {
             sql = String.format("select * from plan where isvalid = 1;");
             try(SQLiteDatabase db = helper.getReadableDatabase()) {
                 cs = db.rawQuery(sql, null);
-                try {
+                for (i=0;i<n; i++) {
                     if (cs.moveToNext()) {
                         // get and set value
-                        i += 1;
                         itemidAll[i] = cs.getString(cs.getColumnIndex("itemid"));
                         nameAll[i] = cs.getString(cs.getColumnIndex("name"));
                         isvalidAll[i] = cs.getInt(cs.getColumnIndex("isvalid"));
@@ -86,12 +76,12 @@ public class DoFragment extends Fragment {
                         timewidthAll[i] = cs.getInt(cs.getColumnIndex("timewidth"));
                         startdateAll[i] = cs.getString(cs.getColumnIndex("startdate"));
                         versionAll[i] = cs.getInt(cs.getColumnIndex("version"));
+                    } else{
+                        break;
                     }
-                } finally {
-                    cs.close();
                 }
             }
-            planCount = i + 1;
+            planCount = i;
 
             // 対象週の月曜日の日付を取得
             //// 現在の日付と曜日を取得

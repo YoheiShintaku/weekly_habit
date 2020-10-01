@@ -16,6 +16,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
@@ -38,8 +40,13 @@ public class PlanFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_plan, null);
 
-        // date
-        setDate(view);  // calendarArray生成
+        // プラン取得
+        getPlan();
+
+        // プラン表示
+        if (planCount>0){
+            showPlan(view);  // calendarArray生成
+        }
 
         return view;
         // 先ほどのレイアウトをここでViewとして作成します
@@ -75,7 +82,6 @@ public class PlanFragment extends Fragment {
             newFragment.show(getFragmentManager(), "test");
 
             return false;
-
         }
     };
 
@@ -89,8 +95,74 @@ public class PlanFragment extends Fragment {
         }
     };
 
+    String[] itemidAll;
+    String[] nameAll;
+    Integer[] isvalidAll;
+    String[] dowAll;
+    Integer[] intervalAll;
+    String[] starttimeAll;
+    Integer[] timewidthAll;
+    String[] startdateAll;
+    Integer[] versionAll;
+    Integer planCount;
+    // 登録済プラン取得
+    void getPlan() {
+        String sql;
+        Cursor cs;
+        // 有効プラン数確認
+        Integer recordCount = 0;
+        sql = String.format("select count(*) from plan where isvalid = 1");
+        try (SQLiteDatabase db = helper.getReadableDatabase()) {
+            cs = db.rawQuery(sql, null);
+            try {
+                if (cs.moveToNext()) {
+                    recordCount = cs.getInt(0);
+                }
+            } finally {
+                cs.close();
+            }
+        }
+        // 有効プラン読み取り
+        Integer n = 100;
+        itemidAll = new String[n];// all record
+        nameAll = new String[n];
+        isvalidAll = new Integer[n];
+        dowAll = new String[n];
+        intervalAll = new Integer[n];
+        starttimeAll = new String[n];
+        timewidthAll = new Integer[n];
+        startdateAll = new String[n];
+        versionAll = new Integer[n];
+        Integer i;
+        planCount = 0;
 
-    void setDate(View view) {
+        if (recordCount > 0) {
+            // 有効プラン情報をdbから取得し配列に格納
+            sql = String.format("select * from plan where isvalid = 1;");
+            try(SQLiteDatabase db = helper.getReadableDatabase()) {
+                cs = db.rawQuery(sql, null);
+                for (i=0;i<n; i++) {
+                    if (cs.moveToNext()) {
+                        // get and set value
+                        itemidAll[i] = cs.getString(cs.getColumnIndex("itemid"));
+                        nameAll[i] = cs.getString(cs.getColumnIndex("name"));
+                        isvalidAll[i] = cs.getInt(cs.getColumnIndex("isvalid"));
+                        dowAll[i] = cs.getString(cs.getColumnIndex("dow"));
+                        intervalAll[i] = cs.getInt(cs.getColumnIndex("interval"));
+                        starttimeAll[i] = cs.getString(cs.getColumnIndex("starttime"));
+                        timewidthAll[i] = cs.getInt(cs.getColumnIndex("timewidth"));
+                        startdateAll[i] = cs.getString(cs.getColumnIndex("startdate"));
+                        versionAll[i] = cs.getInt(cs.getColumnIndex("version"));
+                    } else {
+                        break;
+                    }
+                }
+            }
+            planCount = i;
+        }
+    }
+
+    void showPlan(View view) {
         planLinearLayout = view.findViewById(R.id.planLinearLayout);
         planLinearLayout.setGravity(1);
         TextView textView;
@@ -100,12 +172,11 @@ public class PlanFragment extends Fragment {
         //Log.d("debug","setDate");
         LinearLayout.LayoutParams textLayoutParams = new LinearLayout.LayoutParams(width, height);
         textLayoutParams.setMargins(30, 20, 30, 0);
-        int numOfPlan=10;
-        textViewArray = new TextView[numOfPlan];
-        for (int i = 0; i < numOfPlan; i++) {
+        textViewArray = new TextView[planCount];
+        for (int i = 0; i < planCount; i++) {
             textView = new TextView(getContext());
 
-            textView.setText(String.valueOf(i));
+            textView.setText(nameAll[i]);// plan name
             textView.setTextSize(textsize);
             textView.setBackgroundColor(Color.LTGRAY);
 
