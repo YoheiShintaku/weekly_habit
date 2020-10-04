@@ -33,8 +33,9 @@ public class PlanAddDialogFragment extends DialogFragment {
     EditText EditTextWeekInterval;
     EditText EditTextTimeStart;
     EditText EditTextTimeLength;
-
     AlertDialog alertDialogCreated;
+    Integer recordid;
+
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         helper = new SimpleDatabaseHelper(getContext());
@@ -80,10 +81,43 @@ public class PlanAddDialogFragment extends DialogFragment {
             String sql="";
             Cursor cursor;
 
-
             String itemid = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());// itemidは登録日時
             String startdate = new SimpleDateFormat("yyyyMMdd").format(new Date());// 作成/編集日をあてておく
             Integer version = 1;// 登録時は1。編集ごとに増やしていく
+
+            // レコード数確認
+            Integer recordCountAll = 0;
+            sql = String.format("select count(*) from plan");
+            try (SQLiteDatabase db = helper.getReadableDatabase()) {
+                cursor = db.rawQuery(sql, null);
+                try {
+                    if (cursor.moveToNext()) {
+                        recordCountAll = cursor.getInt(0);
+                    }
+                } finally {
+                    cursor.close();
+                }
+            }
+
+            // 新しいrecordidの決定
+            if (recordCountAll==0){
+                recordid = 0;
+            } else{
+                // recordidのmax読み取り
+                sql = String.format("select max(recordid) from plan");
+                try (SQLiteDatabase db = helper.getReadableDatabase()) {
+                    cursor = db.rawQuery(sql, null);
+                    try {
+                        if (cursor.moveToNext()) {
+                            recordid = cursor.getInt(0);
+                        }
+                    } finally {
+                        cursor.close();
+                    }
+                }
+                recordid += 1; // 新しいレコードは1つ足したIDとする
+            }
+
 
             // 設定内容を取得
             String name = EditTextName.getText().toString();
@@ -101,12 +135,10 @@ public class PlanAddDialogFragment extends DialogFragment {
             if (CheckBoxSun.isChecked()){ dow += ",1"; }
             dow = dow.substring(1);//初めのカンマを除く
 
-            //カンマ区切りの練習
-            //String[] a = dow.split(",");
-
             // tableにinsert
             sql = String.format(
-                    "insert into plan (itemid, isvalid, name, dow, interval, starttime, timewidth, startdate, version) values ('%s', %d, '%s', '%s', %d, '%s', %d, '%s', %d);",
+                    "insert into plan (recordid, itemid, isvalid, name, dow, interval, starttime, timewidth, startdate, version) values (%d,'%s', %d, '%s', '%s', %d, '%s', %d, '%s', %d);",
+                    recordid,
                     itemid,
                     isvalid,
                     name,

@@ -60,7 +60,9 @@ public class MainActivity extends AppCompatActivity {
         // create plan table
         sql = String.format(
                 "create table if not exists plan ("
-                        + "itemid TEXT PRIMARY KEY"
+                        + "recordid INTEGER PRIMARY KEY"
+                        + ", itemid TEXT"
+                        + ", version INTEGER"  // ex.: 1
                         + ", isvalid INTEGER"  // ex.: 1  // 有効or無効 編集すると無効化して新しいid発行
                         + ", name TEXT"  // ex.: "walking"
                         + ", dow TEXT"  // ex.: "1,3,5"
@@ -68,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
                         + ", starttime TEXT"  // ex.: "10:30"
                         + ", timewidth INTEGER"  // ex.: 15 // minute
                         + ", startdate TEXT"  // ex.: 20200918
-                        + ", version INTEGER"  // ex.: 1
                         + ")"
         );
         try(SQLiteDatabase db = helper.getWritableDatabase()) {
@@ -76,9 +77,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // create do table
+        // record id を付与したい
         sql = String.format(
                 "create table if not exists do ("
-                        + "itemid TEXT"
+                        + "recordid INTEGER PRIMARY KEY"
+                        + ", itemid TEXT"
                         + ", version TEXT"
                         + ", name TEXT"
                         + ", starttime TEXT"
