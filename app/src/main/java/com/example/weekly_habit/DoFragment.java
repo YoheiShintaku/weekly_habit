@@ -13,6 +13,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import org.w3c.dom.Text;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -25,6 +27,7 @@ public class DoFragment extends Fragment {
     int viewWidth;
     int viewHeight;
     Integer recordid;
+    String week;
 
     // Fragmentで表示するViewを作成するメソッド
     @Override
@@ -47,7 +50,6 @@ public class DoFragment extends Fragment {
         Integer planCount = -1;
         Calendar calendar;
         Integer dowNumber;
-        String week;
         Date weekDate=null;
         String date=null;
         Integer isdone = 0;
@@ -58,10 +60,10 @@ public class DoFragment extends Fragment {
         Integer diffInDays;
         Integer diffInWeeks;
         int MILLIS_OF_DAY = 1000 * 60 * 60 * 24;
-        int textsize = 30;
-        int width = viewWidth/7;
-        int height = 0;
-        int minuteToDp = viewHeight/1440*2;
+        int textsize;
+        int width;
+        int height;
+        int minuteToDp;
         int minute = 0;
         int margin_left = 0;
         int margin_top = 0;
@@ -240,6 +242,7 @@ public class DoFragment extends Fragment {
             i = 0;
             while(cs.moveToNext()){
                 // get and set value
+                recordid = cs.getInt(cs.getColumnIndex("recordid"));
                 name = cs.getString(cs.getColumnIndex("name"));
                 starttime = cs.getString(cs.getColumnIndex("starttime"));
                 timewidth = cs.getInt(cs.getColumnIndex("timewidth"));
@@ -248,17 +251,6 @@ public class DoFragment extends Fragment {
 
                 // 描画
                 // textviewを生成 isdoneにより背景色を変える nameのみ表示
-                textView = new TextView(getContext());
-                textView.setTextSize(textsize);
-                textView.setText(name);// plan name
-                textView.setId(i);
-                textView.setHint(String.valueOf(isdone));
-                if (isdone==0){
-                    textView.setBackgroundColor(Color.LTGRAY);
-                } else if (isdone==1){
-                    textView.setBackgroundColor(Color.MAGENTA);
-                }
-                height = (int)(timewidth * minuteToDp);
                 try {
                     hhmm = starttime.split(":");
                     starttimeMinute = Integer.parseInt(hhmm[0]) * 60 + Integer.parseInt(hhmm[1]) / 60;
@@ -276,9 +268,24 @@ public class DoFragment extends Fragment {
                 diffInMillis = calendar.getTimeInMillis() - weekCalender.getTimeInMillis();
                 diffInDays = (int)(diffInMillis / MILLIS_OF_DAY);
 
-                // 位置
+                // 位置とサイズ
+                minuteToDp=1;
                 margin_top = starttimeMinute * minuteToDp;
-                margin_left = diffInDays * 100;
+                margin_left = diffInDays * 150;
+                width = 150;
+                height = (int)(timewidth * minuteToDp);
+                textsize = 15;
+
+                textView = new TextView(getContext());
+                textView.setTextSize(textsize);
+                textView.setText(name);// plan name
+                //textView.setId(i);
+                textView.setHint(String.valueOf(recordid));  // クリックイベントで使う
+                if (isdone==0){
+                    textView.setBackgroundColor(Color.LTGRAY);
+                } else if (isdone==1){
+                    textView.setBackgroundColor(Color.MAGENTA);
+                }
 
                 // クリックリスナー登録 isdoneの0/1を入れ替えてupdate、背景色を変える
                 // 配列に格納 //しなくていい？edittextとレコードを紐付けられる？
@@ -307,9 +314,36 @@ public class DoFragment extends Fragment {
     View.OnClickListener doOnClickListener = new View.OnClickListener(){
         @Override
         public void onClick(View v) {
-            //TextView textView = v.findViewById(v.getId())
-            v.setBackgroundColor(Color.MAGENTA);
+            TextView textView = (TextView)v;
+            CharSequence hint = textView.getHint();
+            Integer id = Integer.parseInt(hint.toString());
+            Integer isdone = 0;
+            String sql = String.format("select * from do where recordid = %d", id);
 
+            // 現在のisdoneを取得する
+            try(SQLiteDatabase db = helper.getReadableDatabase()) {
+                Cursor cursor = db.rawQuery(sql, null);
+                if(cursor.moveToNext()){
+                    isdone = cursor.getInt(cursor.getColumnIndex("isdone"));
+                }
+            }
+            // 反転させる
+            if (isdone==0){
+                isdone = 1;
+            } else if (isdone==1){
+                isdone = 0;
+            }
+
+            // dbをupdate
+            sql = String.format("update do set isdone = %d where recordid = %d", isdone, id);
+            try(SQLiteDatabase db = helper.getWritableDatabase()){ db.execSQL(sql); }
+
+            // isdoneに応じて色を変える
+            if (isdone==0){
+                v.setBackgroundColor(Color.LTGRAY);
+            } else if (isdone==1){
+                v.setBackgroundColor(Color.MAGENTA);
+            }
         }
     };
 
