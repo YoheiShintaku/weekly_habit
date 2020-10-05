@@ -2,6 +2,7 @@ package com.example.weekly_habit;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -28,6 +29,7 @@ public class DoFragment extends Fragment {
     int viewHeight;
     Integer recordid;
     String week;
+    ConstraintLayout constraintLayoutDo;
 
     // Fragmentで表示するViewを作成するメソッド
     @Override
@@ -78,7 +80,7 @@ public class DoFragment extends Fragment {
         super.onCreateView(inflater, container, savedInstanceState);
 
         view = inflater.inflate(R.layout.fragment_do, null);
-        relativeLayout = view.findViewById(R.id.relativeLayout);
+        constraintLayoutDo = view.findViewById(R.id.constraintLayoutDo);
 
         // db接続用
         helper = new SimpleDatabaseHelper(getContext());
@@ -269,12 +271,12 @@ public class DoFragment extends Fragment {
                 diffInDays = (int)(diffInMillis / MILLIS_OF_DAY);
 
                 // 位置とサイズ
-                minuteToDp=1;
+                minuteToDp=3;
                 margin_top = starttimeMinute * minuteToDp;
-                margin_left = diffInDays * 150;
-                width = 150;
                 height = (int)(timewidth * minuteToDp);
-                textsize = 15;
+                float startx = (float)diffInDays/7;
+                float widthPercent = (float)1/7;
+                textsize = 10;
 
                 textView = new TextView(getContext());
                 textView.setTextSize(textsize);
@@ -290,14 +292,26 @@ public class DoFragment extends Fragment {
                 // クリックリスナー登録 isdoneの0/1を入れ替えてupdate、背景色を変える
                 // 配列に格納 //しなくていい？edittextとレコードを紐付けられる？
 
-                RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(width, height);
-                lp.setMargins(margin_left, margin_top, 0, 0);
-                textView.setLayoutParams(lp);
+                ConstraintLayout.LayoutParams layoutParams = new ConstraintLayout.LayoutParams(0, height);
+                //lp.setMargins(margin_left, margin_top, 0, 0);
+                //layoutParams.leftMargin = margin_left;
+                layoutParams.topMargin = margin_top;
+                //layoutParams.rightMargin = 0;
+
+                layoutParams.endToEnd = R.id.constraintLayoutDo;
+                layoutParams.topToTop = R.id.constraintLayoutDo;
+                layoutParams.startToStart = R.id.constraintLayoutDo;
+                //widthの残りが移動できる範囲で、それをbiasで決める
+                //widthが決まっていて、ある開始点startxに置きたい場合、
+                //bias = startx / (1 - width)
+                layoutParams.matchConstraintPercentWidth = widthPercent;
+                layoutParams.horizontalBias = startx / (1 - widthPercent);
+                textView.setLayoutParams(layoutParams);
 
                 // リスナーを登録
                 textView.setOnClickListener(doOnClickListener);
 
-                relativeLayout.addView(textView);
+                constraintLayoutDo.addView(textView);
                 //textViewArray[i] = textView;
 
                 // to next record
