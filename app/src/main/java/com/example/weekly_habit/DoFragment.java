@@ -13,7 +13,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
+import android.support.constraint.Guideline;
 import org.w3c.dom.Text;
 
 import java.text.ParseException;
@@ -30,6 +30,8 @@ public class DoFragment extends Fragment {
     Integer recordid;
     String week;
     ConstraintLayout constraintLayoutDo;
+    Guideline guidelineV;
+    Guideline guidelineH;
 
     // Fragmentで表示するViewを作成するメソッド
     @Override
@@ -81,6 +83,8 @@ public class DoFragment extends Fragment {
 
         view = inflater.inflate(R.layout.fragment_do, null);
         constraintLayoutDo = view.findViewById(R.id.constraintLayoutDo);
+        guidelineV = view.findViewById(R.id.guidelineV);
+        guidelineH = view.findViewById(R.id.guidelineH);
 
         // db接続用
         helper = new SimpleDatabaseHelper(getContext());
@@ -235,7 +239,27 @@ public class DoFragment extends Fragment {
             }
         }// for (i=0; i<planCount; i++)
 
-        // 日（横軸）と時間（縦軸）を描画
+        // ヘッダ部: 日（横軸）と時間（縦軸）を描画
+        float startx=(float)0.0;
+        float widthPercent = (float)1/7;
+
+        for (int j=0; j<7; j++){
+            textView = new TextView(getContext());
+            textView.setTextSize(10);
+            textView.setText("10/3(木)");
+            ConstraintLayout.LayoutParams layoutParams = new ConstraintLayout.LayoutParams(0, 50);
+            //lp.setMargins(margin_left, margin_top, 0, 0);
+            layoutParams.setMargins(0, 0, 0, 0);;
+            layoutParams.startToStart = R.id.guidelineV;
+            layoutParams.endToEnd = R.id.constraintLayoutDo;
+            layoutParams.topToTop = R.id.constraintLayoutDo;
+            layoutParams.bottomToTop = R.id.guidelineH;
+            layoutParams.matchConstraintPercentWidth = (float)1/7;
+            startx = (float)1/7*j;
+            layoutParams.horizontalBias = startx / (1 - widthPercent);
+            textView.setLayoutParams(layoutParams);
+            constraintLayoutDo.addView(textView);
+        }
 
         // テーブルから対象週のレコードを取得 1レコードずつ処理
         sql = String.format("select * from do where week = '%s'", week);
@@ -274,8 +298,6 @@ public class DoFragment extends Fragment {
                 minuteToDp=3;
                 margin_top = starttimeMinute * minuteToDp;
                 height = (int)(timewidth * minuteToDp);
-                float startx = (float)diffInDays/7;
-                float widthPercent = (float)1/7;
                 textsize = 10;
 
                 textView = new TextView(getContext());
@@ -299,8 +321,8 @@ public class DoFragment extends Fragment {
                 //layoutParams.rightMargin = 0;
 
                 layoutParams.endToEnd = R.id.constraintLayoutDo;
-                layoutParams.topToTop = R.id.constraintLayoutDo;
-                layoutParams.startToStart = R.id.constraintLayoutDo;
+                layoutParams.topToTop = R.id.guidelineH;
+                layoutParams.startToStart = R.id.guidelineV;
                 //widthの残りが移動できる範囲で、それをbiasで決める
                 //widthが決まっていて、ある開始点startxに置きたい場合、
                 //bias = startx / (1 - width)
