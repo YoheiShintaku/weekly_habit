@@ -15,7 +15,6 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.support.constraint.Guideline;
 import org.w3c.dom.Text;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -239,10 +238,10 @@ public class DoFragment extends Fragment {
             }
         }// for (i=0; i<planCount; i++)
 
-        // ヘッダ部: 日（横軸）と時間（縦軸）を描画
+        // ヘッダ部: 日（横軸）
         float startx=(float)0.0;
-        float widthPercent = (float)1/7;
-
+        float widthPercent=0;
+        widthPercent = (float)1/7;
         for (int j=0; j<7; j++){
             textView = new TextView(getContext());
             textView.setTextSize(10);
@@ -254,14 +253,32 @@ public class DoFragment extends Fragment {
             layoutParams.endToEnd = R.id.constraintLayoutDo;
             layoutParams.topToTop = R.id.constraintLayoutDo;
             layoutParams.bottomToTop = R.id.guidelineH;
-            layoutParams.matchConstraintPercentWidth = (float)1/7;
+            layoutParams.matchConstraintPercentWidth = widthPercent;
             startx = (float)1/7*j;
             layoutParams.horizontalBias = startx / (1 - widthPercent);
             textView.setLayoutParams(layoutParams);
             constraintLayoutDo.addView(textView);
         }
 
-        // テーブルから対象週のレコードを取得 1レコードずつ処理
+        // ヘッダ部：時間（縦軸）
+        height=50;
+        for (int j=0; j<24; j++){
+            textView = new TextView(getContext());
+            textView.setTextSize(10);
+            textView.setText(String.valueOf(j)+":00");
+            ConstraintLayout.LayoutParams layoutParams = new ConstraintLayout.LayoutParams(0, height);
+            layoutParams.startToStart = R.id.constraintLayoutDo;
+            layoutParams.endToStart = R.id.guidelineV;
+            layoutParams.topToTop = R.id.guidelineH;
+            layoutParams.matchConstraintPercentWidth = (float)1.0;
+            layoutParams.setMargins(0, 0, 0, 0);;
+            layoutParams.topMargin = height*j;
+            textView.setPadding(0,0,0,0);
+            textView.setLayoutParams(layoutParams);
+            constraintLayoutDo.addView(textView);
+        }
+
+            // テーブルから対象週のレコードを取得 1レコードずつ処理
         sql = String.format("select * from do where week = '%s'", week);
         try(SQLiteDatabase db = helper.getReadableDatabase()) {
             cs = db.rawQuery(sql, null);
