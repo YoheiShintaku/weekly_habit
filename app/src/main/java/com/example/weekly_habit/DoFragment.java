@@ -70,24 +70,23 @@ public class DoFragment extends Fragment {
         startdateAll = new String[n];
         versionAll = new Integer[n];
         Cursor cs;
-        Integer i;
         String sql;
-        int recordCount=-1;
+        Integer planCount=0;
 
         // planの有効レコード数確認
         sql = String.format("select count(*) from plan where isvalid = 1");
-        recordCount = getRecordCount(sql);
+        planCount = getRecordCount(sql);
 
-        // 存在しなければ-1を返す
-        if (recordCount==0){
-            return -1;
+        // 存在しなければここで終わり
+        if (planCount==0){
+            return planCount;
         }
 
         // プラン内容取得し、配列に格納
         sql = String.format("select * from plan where isvalid = 1;");
         try(SQLiteDatabase db = helper.getReadableDatabase()) {
             cs = db.rawQuery(sql, null);
-            for (i=0;i<n; i++) {
+            for (int i=0;i<n; i++) {
                 if (cs.moveToNext()) {
                     // get and set value
                     itemidAll[i] = cs.getString(cs.getColumnIndex("itemid"));
@@ -105,7 +104,6 @@ public class DoFragment extends Fragment {
             }
         }
         // プラン数を返す
-        Integer planCount = i;
         return planCount;
     }
 
@@ -156,10 +154,11 @@ public class DoFragment extends Fragment {
         Calendar calendar;
         Integer dowNumber;
 
-        // 開始日（登録日）の週の月曜日のcalendarを取得
+        // 開始日（登録日）の直近土曜日のcalendarを取得
         calendar = string2Calendar(startdateAll[i]);
         dowNumber = calendar.get(Calendar.DAY_OF_WEEK);//曜日//Sun:1, Sat:7
-        calendar.add(Calendar.DAY_OF_MONTH, (dowNumber - 2)*-1);//その週の月曜日の日付に
+        if (dowNumber==7){dowNumber=0;}//0:Sat
+        calendar.add(Calendar.DAY_OF_MONTH, (dowNumber)*-1);
 
         // 処理対象週の月曜日との週間隔が、設定した週間隔で割り切れるか
         long diffInMillis = Math.abs(calendar.getTimeInMillis() - calendarWeekStart.getTimeInMillis());
@@ -180,12 +179,13 @@ public class DoFragment extends Fragment {
         // maxの次のrecordidとなる整数を取得
         recordid = getNewRecordId();
 
-        // 現在週の月曜日をCalendar型で取得
+        // 直近の土曜日をCalendar型で取得
         calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         Integer dowNumber = calendar.get(Calendar.DAY_OF_WEEK);//Sun:1, Sat:7
-        calendar.add(Calendar.DAY_OF_MONTH, (dowNumber - 2)*-1);
-        stringWeekStart = new SimpleDateFormat("yyyyMMdd").format(calendar.getTime());//0時にするためにわざわざやってる？
+        if (dowNumber==7){dowNumber=0;}//0:Sat
+        calendar.add(Calendar.DAY_OF_MONTH, dowNumber*-1);
+        stringWeekStart = new SimpleDateFormat("yyyyMMdd").format(calendar.getTime());
         calendarWeekStart = string2Calendar(stringWeekStart);
 
         // プランのループ
@@ -205,10 +205,11 @@ public class DoFragment extends Fragment {
             // 曜日のループ処理でレコードを作成していく
             dowSplited = dowAll[i].split(",");
             for (int k=0; k<dowSplited.length; k++){
-                // 曜日を日付の文字列に
-                calendar = (Calendar) calendarWeekStart.clone();//月曜日
+                // 該当曜日を日付に（土曜始まり）
+                calendar = (Calendar) calendarWeekStart.clone();
                 dowNumber = Integer.parseInt(dowSplited[k]);
-                calendar.add(Calendar.DAY_OF_MONTH, dowNumber - 2);//曜日分ずらす
+                if (dowNumber==7){dowNumber=0;}//0:Sat
+                calendar.add(Calendar.DAY_OF_MONTH, dowNumber);
                 date = new SimpleDateFormat("yyyyMMdd").format(calendar.getTime());
 
                 // tableにinsert
@@ -245,36 +246,13 @@ public class DoFragment extends Fragment {
         textsize = 10;
 
         // ヘッダ部: 日（横軸）
+        String[] dayOfWeek = new String[]{"土","日","月","火","水","木","金"};
         for (int j=0; j<7; j++){
             // 日付文字列を生成
             calendar = (Calendar) calendarWeekStart.clone();
             calendar.add(Calendar.DAY_OF_MONTH, j);
             string = new SimpleDateFormat("M/d").format(calendar.getTime());
-            int dow = calendar.get(Calendar.DAY_OF_WEEK);
-            switch (calendar.get(Calendar.DAY_OF_WEEK)){
-                case 1:
-                    dowString = "(日)";
-                    break;
-                case 2:
-                    dowString = "(月)";
-                    break;
-                case 3:
-                    dowString = "(火)";
-                    break;
-                case 4:
-                    dowString = "(水)";
-                    break;
-                case 5:
-                    dowString = "(木)";
-                    break;
-                case 6:
-                    dowString = "(金)";
-                    break;
-                case 7:
-                    dowString = "(土)";
-                    break;
-            }
-            string += dowString;
+            string += dayOfWeek[j];
 
             // 表示位置とサイズ
             layoutParams = new ConstraintLayout.LayoutParams(0, 0);
@@ -326,13 +304,12 @@ public class DoFragment extends Fragment {
         Integer isdone;
         String[] hhmm;
         Integer starttimeMinute;
-        long diffInMillis;
-        Integer diffInDays;
         Integer margin_top;
         Integer margin_left;
         Integer margin_right;
         Integer margin_bottom;
         Integer height;
+        Integer dowNumber;
 
         cnt=0;
         sql = String.format("select * from do where week = '%s'", stringWeekStart);
@@ -353,11 +330,11 @@ public class DoFragment extends Fragment {
                     starttimeMinute = Integer.parseInt(hhmm[0]) * 60 + Integer.parseInt(hhmm[1]) / 60;
                 } catch (Exception e){ continue; }
 
-                // 月曜日との日数差から横位置を決める
+                // 曜日で横位置を決める
                 calendar = string2Calendar(date);
-                diffInMillis = calendar.getTimeInMillis() - calendarWeekStart.getTimeInMillis();
-                diffInDays = (int)(diffInMillis / MILLIS_OF_DAY);
-                startx = (float)1/7*diffInDays;
+                dowNumber = calendar.get(Calendar.DAY_OF_WEEK);//Sun:1, Sat:7
+                if (dowNumber==7){dowNumber=0;}//0:Sat
+                startx = (float)1/7*dowNumber;
 
                 layoutParams = new ConstraintLayout.LayoutParams(0, (int)(timewidth * minuteToDp));
                 layoutParams.endToEnd = R.id.constraintLayoutDo;
@@ -409,7 +386,7 @@ public class DoFragment extends Fragment {
 
         // 有効プラン読み取り
         planCount = getPlans();
-        if (planCount==1){
+        if (planCount==0){
             return view;//ここで処理終了
         }
 

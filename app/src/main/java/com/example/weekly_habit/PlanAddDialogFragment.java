@@ -126,13 +126,13 @@ public class PlanAddDialogFragment extends DialogFragment {
             String starttime = EditTextTimeStart.getText().toString();
             Integer timewidth = Integer.parseInt(EditTextTimeLength.getText().toString());
             String dow = "";
+            if (CheckBoxSat.isChecked()){ dow += ",0"; }
+            if (CheckBoxSun.isChecked()){ dow += ",1"; }
             if (CheckBoxMon.isChecked()){ dow += ",2"; }
             if (CheckBoxTue.isChecked()){ dow += ",3"; }
             if (CheckBoxWed.isChecked()){ dow += ",4"; }
             if (CheckBoxThu.isChecked()){ dow += ",5"; }
             if (CheckBoxFri.isChecked()){ dow += ",6"; }
-            if (CheckBoxSat.isChecked()){ dow += ",7"; }
-            if (CheckBoxSun.isChecked()){ dow += ",1"; }
             dow = dow.substring(1);//初めのカンマを除く
 
             // tableにinsert
