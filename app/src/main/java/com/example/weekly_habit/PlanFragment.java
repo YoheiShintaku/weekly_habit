@@ -1,22 +1,16 @@
 package com.example.weekly_habit;
 
 import android.graphics.Color;
-import android.support.annotation.ColorInt;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -26,10 +20,21 @@ public class PlanFragment extends Fragment {
     private SimpleDatabaseHelper helper = null;
     private LinearLayout planLinearLayout;
     View view;
+    Integer[] planrecordidAll;
+    String[] itemidAll;
+    Integer[] versionAll;
+    Integer[] isvalidAll;
+    String[] startdateAll;
+    String[] nameAll;
+    String[] dowAll;
+    Integer[] intervalAll;
+    String[] starttimeAll;
+    Integer[] timewidthAll;
 
     // Fragmentで表示するViewを作成するメソッド
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Integer planCount;
 
         super.onCreateView(inflater, container, savedInstanceState);
 
@@ -43,11 +48,11 @@ public class PlanFragment extends Fragment {
         planLinearLayout = view.findViewById(R.id.planLinearLayout);
 
         // プラン取得
-        getPlan();
+        planCount = getPlan();
 
         // プラン表示
         if (planCount>0){
-            showPlan(view);
+            placePlan(view, planCount);
         }
 
         // 追加ボタン
@@ -63,68 +68,10 @@ public class PlanFragment extends Fragment {
         //return inflater.inflate(R.layout.fragment_plan, container, false);
     }
 
-    TextView[] textViewArray;
-    // planテキスト長押しリスナー
-    View.OnLongClickListener planOnLongClickListener = new View.OnLongClickListener(){
-        @Override
-        public boolean onLongClick(View v) {
-
-            // どのプランか判定
-            int iBox = -1;
-            for (int i = 0; i < textViewArray.length; i++) {
-                if (textViewArray[i].hashCode() == v.hashCode()) {
-                    //Toast.makeText(getContext(), string, Toast.LENGTH_LONG).show();
-                    iBox = i;
-                    break;
-                }
-            }
-
-            // 編集ダイアログを表示する // 引数itemidを渡す必要がある
-            DialogFragment newFragment = new PlanAddDialogFragment();
-            newFragment.show(getFragmentManager(), "test");
-
-            return false;
-        }
-    };
-
-    // 追加ボタンクリックリスナー
-    View.OnClickListener addPlanOnClickListener = new View.OnClickListener(){
-        @Override
-        public void onClick(View v) {
-            // 登録画面ダイアログを表示する
-            DialogFragment newFragment = new PlanAddDialogFragment();
-            newFragment.show(getFragmentManager(), "test");
-            // プランリスト表示を更新
-
-            planLinearLayout.removeAllViews();
-            getPlan();
-            if (planCount>0){
-                showPlan(view);
-            }
-        }
-    };
-
-    Integer[] recordidAll;
-    String[] itemidAll;
-    String[] nameAll;
-    Integer[] isvalidAll;
-    String[] dowAll;
-    Integer[] intervalAll;
-    String[] starttimeAll;
-    Integer[] timewidthAll;
-    String[] startdateAll;
-    Integer[] versionAll;
-    Integer planCount;
-    Integer recordid;
-    // 登録済プラン取得
-    void getPlan() {
-        planCount = 0;
-        String sql;
+    Integer getRecordCount(String sql){
+        Integer recordCount = -1;
         Cursor cs;
-        // 有効プラン数確認
-        Integer recordCount = 0;
-        sql = String.format("select count(*) from plan where isvalid = 1");
-        try (SQLiteDatabase db = helper.getReadableDatabase()) {
+        try(SQLiteDatabase db = helper.getReadableDatabase()) {
             cs = db.rawQuery(sql, null);
             try {
                 if (cs.moveToNext()) {
@@ -134,90 +81,108 @@ public class PlanFragment extends Fragment {
                 cs.close();
             }
         }
+        return recordCount;
+    }
 
-        if (recordCount == 0){
-            return;
-        }
+    // 登録済プラン取得
+    Integer getPlan() {
+        Integer planCount = 0;
+        String sql;
+        Cursor cs;
+        Integer recordCount;
 
-        // recordidのmax読み取り
-        sql = String.format("select max(recordid) from plan");
-        try (SQLiteDatabase db = helper.getReadableDatabase()) {
-            cs = db.rawQuery(sql, null);
-            try {
-                if (cs.moveToNext()) {
-                    recordid = cs.getInt(0);
-                }
-            } finally {
-                cs.close();
-            }
-        }
+        // 有効プランがなければ進まない
+        sql = String.format("select count(*) from plan where isvalid = 1");
+        planCount = getRecordCount(sql);
+        if (planCount == 0){ return 0;}
 
         // 有効プラン読み取り
         Integer n = 100;
-        recordidAll = new Integer[n];// all record
+        planrecordidAll = new Integer[n];// all record
         itemidAll = new String[n];// all record
-        nameAll = new String[n];
+        versionAll = new Integer[n];
         isvalidAll = new Integer[n];
+        startdateAll = new String[n];
+        nameAll = new String[n];
         dowAll = new String[n];
         intervalAll = new Integer[n];
         starttimeAll = new String[n];
         timewidthAll = new Integer[n];
-        startdateAll = new String[n];
-        versionAll = new Integer[n];
-        Integer i;
+        int cnt = 0;
 
         // 有効プラン情報をdbから取得し配列に格納
         sql = String.format("select * from plan where isvalid = 1;");
         try(SQLiteDatabase db = helper.getReadableDatabase()) {
             cs = db.rawQuery(sql, null);
-            for (i=0;i<n; i++) {
-                if (cs.moveToNext()) {
-                    // get and set value
-                    recordidAll[i] = cs.getInt(cs.getColumnIndex("recordid"));
-                    itemidAll[i] = cs.getString(cs.getColumnIndex("itemid"));
-                    nameAll[i] = cs.getString(cs.getColumnIndex("name"));
-                    isvalidAll[i] = cs.getInt(cs.getColumnIndex("isvalid"));
-                    dowAll[i] = cs.getString(cs.getColumnIndex("dow"));
-                    intervalAll[i] = cs.getInt(cs.getColumnIndex("interval"));
-                    starttimeAll[i] = cs.getString(cs.getColumnIndex("starttime"));
-                    timewidthAll[i] = cs.getInt(cs.getColumnIndex("timewidth"));
-                    startdateAll[i] = cs.getString(cs.getColumnIndex("startdate"));
-                    versionAll[i] = cs.getInt(cs.getColumnIndex("version"));
-                } else {
-                    break;
-                }
+            while(cs.moveToNext()){
+                // get and set value
+                planrecordidAll[cnt] = cs.getInt(cs.getColumnIndex("planrecordid"));
+                itemidAll[cnt] = cs.getString(cs.getColumnIndex("itemid"));
+                versionAll[cnt] = cs.getInt(cs.getColumnIndex("version"));
+                isvalidAll[cnt] = cs.getInt(cs.getColumnIndex("isvalid"));
+                startdateAll[cnt] = cs.getString(cs.getColumnIndex("startdate"));
+                nameAll[cnt] = cs.getString(cs.getColumnIndex("name"));
+                dowAll[cnt] = cs.getString(cs.getColumnIndex("dow"));
+                intervalAll[cnt] = cs.getInt(cs.getColumnIndex("interval"));
+                starttimeAll[cnt] = cs.getString(cs.getColumnIndex("starttime"));
+                timewidthAll[cnt] = cs.getInt(cs.getColumnIndex("timewidth"));
+                cnt++;
             }
         }
-        planCount = i;
+        return planCount;
     }
 
-    void showPlan(View view) {
+    void placePlan(View view, Integer planCount) {
         planLinearLayout.setGravity(1);
+        LinearLayout.LayoutParams textLayoutParams;
         TextView textView;
         int textsize = 30;
         int width = ViewGroup.LayoutParams.MATCH_PARENT;
         int height = ViewGroup.LayoutParams.WRAP_CONTENT;
-        //Log.d("debug","setDate");
-        LinearLayout.LayoutParams textLayoutParams = new LinearLayout.LayoutParams(width, height);
-        textLayoutParams.setMargins(30, 20, 30, 0);
-        textViewArray = new TextView[planCount];
-        for (int i = 0; i < planCount; i++) {
-            textView = new TextView(getContext());
 
+        for (int i = 0; i < planCount; i++) {
+            textLayoutParams = new LinearLayout.LayoutParams(width, height);
+            textLayoutParams.setMargins(30, 20, 30, 0);
+
+            textView = new TextView(getContext());
+            textView.setLayoutParams(textLayoutParams);
             textView.setText(nameAll[i]);// plan name
             textView.setTextSize(textsize);
             textView.setBackgroundColor(Color.LTGRAY);
-
-            //textView.setGravity(gravity);  // center
-            //textView.setBackground(getResources().getDrawable( R.drawable.view_frame ));
-            textView.setLayoutParams(textLayoutParams);
-
-            // リスナーを登録
-            textView.setOnLongClickListener(planOnLongClickListener);
+            textView.setHint(String.valueOf(planrecordidAll[i]));  // クリックイベントで使う
+            textView.setOnLongClickListener(planOnLongClickListener);// リスナーを登録
 
             planLinearLayout.addView(textView);
-            textViewArray[i] = textView;
         }
     }
 
+    // 追加ボタンクリックリスナー
+    View.OnClickListener addPlanOnClickListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View v) {
+            // 新規登録画面ダイアログを表示する
+            DialogFragment fragment = PlanAddDialogFragment.newInstance(-1);
+            fragment.show(getFragmentManager(), "test");
+
+            // プランリスト表示を更新
+            //planLinearLayout.removeAllViews();
+        }
+    };
+
+    // planテキスト長押しリスナー（編集）
+    View.OnLongClickListener planOnLongClickListener = new View.OnLongClickListener(){
+        @Override
+        public boolean onLongClick(View v) {
+            // 対応するplanrecordid取得
+            TextView textView = (TextView)v;
+            CharSequence hint = textView.getHint();
+            Integer planrecordid = Integer.parseInt(hint.toString());
+
+            // 編集ダイアログ（基本的には登録画面と同じ）を表示する
+            DialogFragment fragment = PlanAddDialogFragment.newInstance(planrecordid);
+            fragment.show(getFragmentManager(), "test");
+
+            return true;
+        }
+    };
 }

@@ -22,53 +22,69 @@ public class DoFragment extends Fragment {
     private SimpleDatabaseHelper helper = null;
     int MILLIS_OF_DAY = 1000 * 60 * 60 * 24;
     View view;
-    int viewWidth;
-    int viewHeight;
     String stringWeekStart;
     Calendar calendarWeekStart;
     ConstraintLayout constraintLayoutDo;
     Guideline guidelineV;
     Guideline guidelineH;
 
-    String[] itemidAll;// all record
-    String[] nameAll;
+    Integer[] planrecordidAll;//
+    Integer[] itemidAll;//
     Integer[] isvalidAll;
+    Integer[] versionAll;
+    String[] nameAll;
     String[] dowAll;
     String[] dowSplited;// splited by comma
     Integer[] intervalAll;
     String[] starttimeAll;
     Integer[] timewidthAll;
     String[] startdateAll;
-    Integer[] versionAll;
 
-    Integer getRecordCount(String sql){
-        Integer recordCount = -1;
-        Cursor cs;
-        try(SQLiteDatabase db = helper.getReadableDatabase()) {
-            cs = db.rawQuery(sql, null);
-            try {
-                if (cs.moveToNext()) {
-                    recordCount = cs.getInt(0);
-                }
-            } finally {
-                cs.close();
-            }
+
+    // Fragmentで表示するViewを作成するメソッド
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Integer planCount = -1;
+
+        super.onCreateView(inflater, container, savedInstanceState);
+
+        view = inflater.inflate(R.layout.fragment_do, null);
+        constraintLayoutDo = view.findViewById(R.id.constraintLayoutDo);
+        guidelineV = view.findViewById(R.id.guidelineV);
+        guidelineH = view.findViewById(R.id.guidelineH);
+
+        // db接続用
+        helper = new SimpleDatabaseHelper(getContext());
+
+        // 有効プラン読み取り
+        planCount = getPlans();
+        if (planCount==0){
+            return view;//ここで処理終了
         }
-        return recordCount;
+
+        // 今週のdoレコード生成
+        makeDoRecords(planCount);
+
+        // 表示
+        showTimeSchedule();
+
+        // 先ほどのレイアウトをここでViewとして作成します
+        return view;
     }
 
     Integer getPlans(){
         // 有効プラン情報をdbから取得し配列に格納
         int n = 100;
-        itemidAll = new String[n];// all record
-        nameAll = new String[n];
+        planrecordidAll = new Integer[n];
+        itemidAll = new Integer[n];
         isvalidAll = new Integer[n];
+        versionAll = new Integer[n];
+        nameAll = new String[n];
         dowAll = new String[n];
         intervalAll = new Integer[n];
         starttimeAll = new String[n];
         timewidthAll = new Integer[n];
         startdateAll = new String[n];
-        versionAll = new Integer[n];
         Cursor cs;
         String sql;
         Integer planCount=0;
@@ -89,15 +105,16 @@ public class DoFragment extends Fragment {
             for (int i=0;i<n; i++) {
                 if (cs.moveToNext()) {
                     // get and set value
-                    itemidAll[i] = cs.getString(cs.getColumnIndex("itemid"));
-                    nameAll[i] = cs.getString(cs.getColumnIndex("name"));
+                    planrecordidAll[i] = cs.getInt(cs.getColumnIndex("planrecordid"));
+                    itemidAll[i] = cs.getInt(cs.getColumnIndex("itemid"));
                     isvalidAll[i] = cs.getInt(cs.getColumnIndex("isvalid"));
+                    versionAll[i] = cs.getInt(cs.getColumnIndex("version"));
+                    nameAll[i] = cs.getString(cs.getColumnIndex("name"));
                     dowAll[i] = cs.getString(cs.getColumnIndex("dow"));
                     intervalAll[i] = cs.getInt(cs.getColumnIndex("interval"));
                     starttimeAll[i] = cs.getString(cs.getColumnIndex("starttime"));
                     timewidthAll[i] = cs.getInt(cs.getColumnIndex("timewidth"));
                     startdateAll[i] = cs.getString(cs.getColumnIndex("startdate"));
-                    versionAll[i] = cs.getInt(cs.getColumnIndex("version"));
                 } else{
                     break;
                 }
@@ -107,77 +124,34 @@ public class DoFragment extends Fragment {
         return planCount;
     }
 
-
-    Integer getNewRecordId(){
-        Integer recordId = -1;
+    Integer getRecordCount(String sql){
+        Integer recordCount = -1;
         Cursor cs;
-        String sql;
-
-        // do tableのレコード数とrecordid確認
-        sql = String.format("select count(*), max(recordid) from do");
-
-        // recordidのmax取得
-        Integer recordCountDo=0;
         try(SQLiteDatabase db = helper.getReadableDatabase()) {
             cs = db.rawQuery(sql, null);
             try {
                 if (cs.moveToNext()) {
-                    recordCountDo = cs.getInt(0);
-                    recordId = cs.getInt(1);
+                    recordCount = cs.getInt(0);
                 }
             } finally {
                 cs.close();
             }
         }
-        // 新しいrecordid
-        if (recordCountDo > 0){
-            recordId += 1;
-        } else {
-            recordId = 0;
-        }
-        return recordId;
-    }
-
-    Calendar string2Calendar(String str){
-        Date DateStartDate=null;
-        Calendar calendar;
-        try{
-            DateStartDate = new SimpleDateFormat("yyyyMMdd").parse(str);
-        } catch (ParseException e){ }
-        calendar = Calendar.getInstance();
-        calendar.setTime(DateStartDate);
-        return calendar;
-    }
-
-    // 週間隔にマッチする週か判定
-    boolean judgeWeek(Integer i){
-        Calendar calendar;
-        Integer dowNumber;
-
-        // 開始日（登録日）の直近土曜日のcalendarを取得
-        calendar = string2Calendar(startdateAll[i]);
-        dowNumber = calendar.get(Calendar.DAY_OF_WEEK);//曜日//Sun:1, Sat:7
-        if (dowNumber==7){dowNumber=0;}//0:Sat
-        calendar.add(Calendar.DAY_OF_MONTH, (dowNumber)*-1);
-
-        // 処理対象週の月曜日との週間隔が、設定した週間隔で割り切れるか
-        long diffInMillis = Math.abs(calendar.getTimeInMillis() - calendarWeekStart.getTimeInMillis());
-        Integer diffInDays = (int)(diffInMillis / MILLIS_OF_DAY);
-        Integer diffInWeeks = diffInDays / 7;
-        return ((diffInWeeks%intervalAll[i])>0);
+        return recordCount;
     }
 
     void makeDoRecords(Integer planCount){
-        Integer recordid = -1;
+        Integer dorecordid = -1;
         Integer recordCount;
         Calendar calendar;
         String sql;
         Cursor cs;
         String date;
-        Integer isdone = 0;
+        Integer isdone;
+        Integer isvalid;
 
         // maxの次のrecordidとなる整数を取得
-        recordid = getNewRecordId();
+        dorecordid = getNewRecordId();
 
         // 直近の土曜日をCalendar型で取得
         calendar = Calendar.getInstance();
@@ -190,19 +164,20 @@ public class DoFragment extends Fragment {
 
         // プランのループ
         for (int i=0; i<planCount; i++){
-            // 2回目だったらすでにあるよね。そこのチェックと分岐は？
-            // 対象週に該当itemidのレコードが一つ以上あるかどうか。編集したらその週以降のレコードは消すこととすれば、それでok
-
-            // 対象週でなければskip
-            if (judgeWeek(i)){continue;}
-
-            // すでにレコードが存在すればskip
-            sql = String.format("select count(*) from do where itemid = '%s' and week = '%s'",
-                    itemidAll[i], stringWeekStart);
+            // すでにレコード作成済（初回表示でない）ならskip
+            sql = String.format("select count(*) from do where " +
+                            "isvalid=1 and " +  // 有効
+                            "week='%s' and " +  // この週
+                            "planrecordid='%s'",// 該当プランレコード
+                    stringWeekStart,
+                    planrecordidAll[i]);
             recordCount = getRecordCount(sql);
             if (recordCount > 0){continue;}
 
-            // 曜日のループ処理でレコードを作成していく
+            // 対象週でなければskip
+            if (judgeWeek(startdateAll[i],intervalAll[i])){continue;}
+
+            // 曜日のループ処理でレコードを追加していく
             dowSplited = dowAll[i].split(",");
             for (int k=0; k<dowSplited.length; k++){
                 // 該当曜日を日付に（土曜始まり）
@@ -211,26 +186,83 @@ public class DoFragment extends Fragment {
                 if (dowNumber==7){dowNumber=0;}//0:Sat
                 calendar.add(Calendar.DAY_OF_MONTH, dowNumber);
                 date = new SimpleDateFormat("yyyyMMdd").format(calendar.getTime());
+                isvalid = 1;
+                isdone = 0;
 
                 // tableにinsert
                 sql = String.format(
-                        "insert into do (recordid, itemid, version, name, starttime, timewidth, date, week, isdone) values (%d, '%s', %d, '%s', '%s', %d, '%s', '%s', %d);",
-                        recordid,
-                        itemidAll[i],
-                        versionAll[i],
-                        nameAll[i],
-                        starttimeAll[i],
-                        timewidthAll[i],
-                        date,
-                        stringWeekStart,
-                        isdone
-                );
+                        "insert into do (" +
+                                "dorecordid, isvalid, isdone, date, week, " +
+                                "planrecordid, itemid, name, starttime, timewidth) values (" +
+                                "%d, %d, %d, '%s', '%s'," +
+                                "%d, %d, '%s', '%s', %d);",
+                        dorecordid, isvalid, isdone, date, stringWeekStart,
+                        planrecordidAll[i], itemidAll[i], nameAll[i], starttimeAll[i], timewidthAll[i]);
                 try (SQLiteDatabase db = helper.getWritableDatabase()) {
                     db.execSQL(sql);
                 }
-                recordid += 1;
+                dorecordid += 1;
             }
         }
+    }
+
+    Integer getNewRecordId(){
+        Integer dorecordid = -1;
+        Cursor cs;
+        String sql;
+
+        // do tableのレコード数とrecordid確認
+        sql = String.format("select count(*), max(dorecordid) from do");
+
+        // dorecordidのmax取得
+        Integer recordCountDo=0;
+        try(SQLiteDatabase db = helper.getReadableDatabase()) {
+            cs = db.rawQuery(sql, null);
+            try {
+                if (cs.moveToNext()) {
+                    recordCountDo = cs.getInt(0);
+                    dorecordid = cs.getInt(1);
+                }
+            } finally {
+                cs.close();
+            }
+        }
+        // 新しいdorecordid
+        if (recordCountDo > 0){
+            dorecordid += 1;
+        } else {
+            dorecordid = 0;
+        }
+        return dorecordid;
+    }
+
+    // 週間隔にマッチする週か判定
+    boolean judgeWeek(String startdate, Integer interval){
+        Calendar calendar;
+        Integer dowNumber;
+
+        // 開始日（登録日）の直近土曜日のcalendarを取得
+        calendar = string2Calendar(startdate);
+        dowNumber = calendar.get(Calendar.DAY_OF_WEEK);//曜日//Sun:1, Sat:7
+        if (dowNumber==7){dowNumber=0;}//0:Sat
+        calendar.add(Calendar.DAY_OF_MONTH, (dowNumber)*-1);
+
+        // 処理対象週の月曜日との週間隔が、設定した週間隔で割り切れるか
+        long diffInMillis = Math.abs(calendar.getTimeInMillis() - calendarWeekStart.getTimeInMillis());
+        Integer diffInDays = (int)(diffInMillis / MILLIS_OF_DAY);
+        Integer diffInWeeks = diffInDays / 7;
+        return ((diffInWeeks%interval)>0);
+    }
+
+    Calendar string2Calendar(String str){
+        Date DateStartDate=null;
+        Calendar calendar;
+        try{
+            DateStartDate = new SimpleDateFormat("yyyyMMdd").parse(str);
+        } catch (ParseException e){ }
+        calendar = Calendar.getInstance();
+        calendar.setTime(DateStartDate);
+        return calendar;
     }
 
     void showTimeSchedule(){
@@ -296,7 +328,7 @@ public class DoFragment extends Fragment {
         int cnt;
         String sql;
         Cursor cs=null;
-        long recordid;
+        long dorecordid;
         String name;
         String starttime;
         Integer timewidth;
@@ -304,25 +336,20 @@ public class DoFragment extends Fragment {
         Integer isdone;
         String[] hhmm;
         Integer starttimeMinute;
-        Integer margin_top;
-        Integer margin_left;
-        Integer margin_right;
-        Integer margin_bottom;
-        Integer height;
         Integer dowNumber;
 
         cnt=0;
-        sql = String.format("select * from do where week = '%s'", stringWeekStart);
+        sql = String.format("select * from do where week='%s' and isvalid=1", stringWeekStart);
         try(SQLiteDatabase db = helper.getReadableDatabase()) {
             cs = db.rawQuery(sql, null);
             while(cs.moveToNext()){
                 // get and set value
-                recordid = cs.getInt(cs.getColumnIndex("recordid"));
-                name = cs.getString(cs.getColumnIndex("name"));
+                dorecordid = cs.getInt(cs.getColumnIndex("dorecordid"));
+                isdone = cs.getInt(cs.getColumnIndex("isdone"));
+                date = cs.getString(cs.getColumnIndex("date"));
+                name = cs.getString(cs.getColumnIndex("name"));//以下はプラン情報
                 starttime = cs.getString(cs.getColumnIndex("starttime"));
                 timewidth = cs.getInt(cs.getColumnIndex("timewidth"));
-                date = cs.getString(cs.getColumnIndex("date"));
-                isdone = cs.getInt(cs.getColumnIndex("isdone"));
 
                 // 開始時刻を分に変換
                 try {
@@ -351,7 +378,7 @@ public class DoFragment extends Fragment {
                 textView.setTextSize(textsize);
                 textView.setText(name);// plan name
                 //textView.setId(i);
-                textView.setHint(String.valueOf(recordid));  // クリックイベントで使う
+                textView.setHint(String.valueOf(dorecordid));  // クリックイベントで使う
                 if (isdone==0){
                     textView.setBackgroundColor(Color.LTGRAY);
                 } else if (isdone==1){
@@ -369,45 +396,21 @@ public class DoFragment extends Fragment {
         }
     }
 
-    // Fragmentで表示するViewを作成するメソッド
+    // Viewが生成し終わった時に呼ばれるメソッド
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Integer planCount = -1;
-
-        super.onCreateView(inflater, container, savedInstanceState);
-
-        view = inflater.inflate(R.layout.fragment_do, null);
-        constraintLayoutDo = view.findViewById(R.id.constraintLayoutDo);
-        guidelineV = view.findViewById(R.id.guidelineV);
-        guidelineH = view.findViewById(R.id.guidelineH);
-
-        // db接続用
-        helper = new SimpleDatabaseHelper(getContext());
-
-        // 有効プラン読み取り
-        planCount = getPlans();
-        if (planCount==0){
-            return view;//ここで処理終了
-        }
-
-        // 今週のdoレコード生成
-        makeDoRecords(planCount);
-
-        // 表示
-        showTimeSchedule();
-
-        // 先ほどのレイアウトをここでViewとして作成します
-        return view;
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
     }
 
+    // クリックするとisdoneを反転させる
     View.OnClickListener doOnClickListener = new View.OnClickListener(){
         @Override
         public void onClick(View v) {
             TextView textView = (TextView)v;
             CharSequence hint = textView.getHint();
-            Integer id = Integer.parseInt(hint.toString());
-            Integer isdone = 0;
-            String sql = String.format("select * from do where recordid = %d", id);
+            Integer dorecordid = Integer.parseInt(hint.toString());
+            Integer isdone = -1;
+            String sql = String.format("select * from do where dorecordid = %d", dorecordid);
 
             // 現在のisdoneを取得する
             try(SQLiteDatabase db = helper.getReadableDatabase()) {
@@ -424,7 +427,7 @@ public class DoFragment extends Fragment {
             }
 
             // dbをupdate
-            sql = String.format("update do set isdone = %d where recordid = %d", isdone, id);
+            sql = String.format("update do set isdone = %d where dorecordid = %d", isdone, dorecordid);
             try(SQLiteDatabase db = helper.getWritableDatabase()){ db.execSQL(sql); }
 
             // isdoneに応じて色を変える
@@ -436,9 +439,4 @@ public class DoFragment extends Fragment {
         }
     };
 
-    // Viewが生成し終わった時に呼ばれるメソッド
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-    }
 }

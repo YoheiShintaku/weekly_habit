@@ -60,16 +60,16 @@ public class MainActivity extends AppCompatActivity {
         // create plan table
         sql = String.format(
                 "create table if not exists plan ("
-                        + "recordid INTEGER PRIMARY KEY"
-                        + ", itemid TEXT"
+                        + "planrecordid INTEGER PRIMARY KEY"
+                        + ", itemid INTEGER"
                         + ", version INTEGER"  // ex.: 1
                         + ", isvalid INTEGER"  // ex.: 1  // 有効or無効 編集すると無効化して新しいid発行
+                        + ", startdate TEXT"  // 登録日を開始日とする
                         + ", name TEXT"  // ex.: "walking"
                         + ", dow TEXT"  // ex.: "1,3,5"
                         + ", interval INTEGER"  // ex.: 1  // 週間隔
                         + ", starttime TEXT"  // ex.: "10:30"
                         + ", timewidth INTEGER"  // ex.: 15 // minute
-                        + ", startdate TEXT"  // ex.: 20200918
                         + ")"
         );
         try(SQLiteDatabase db = helper.getWritableDatabase()) {
@@ -80,15 +80,16 @@ public class MainActivity extends AppCompatActivity {
         // record id を付与したい
         sql = String.format(
                 "create table if not exists do ("
-                        + "recordid INTEGER PRIMARY KEY"
-                        + ", itemid TEXT"
-                        + ", version TEXT"
+                        + "dorecordid INTEGER PRIMARY KEY"
+                        + ", isvalid INTEGER"
+                        + ", isdone INTEGER"
+                        + ", date TEXT"
+                        + ", week TEXT"
+                        + ", planrecordid INTEGER"//ここ以下はplanからコピーした情報
+                        + ", itemid INTEGER"
                         + ", name TEXT"
                         + ", starttime TEXT"
                         + ", timewidth INTEGER"
-                        + ", date TEXT"
-                        + ", week TEXT"//検索用
-                        + ", isdone INTEGER"
                         + ")"
         );
         try(SQLiteDatabase db = helper.getWritableDatabase()) {

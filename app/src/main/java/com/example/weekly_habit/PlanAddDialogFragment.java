@@ -34,11 +34,22 @@ public class PlanAddDialogFragment extends DialogFragment {
     EditText EditTextTimeStart;
     EditText EditTextTimeLength;
     AlertDialog alertDialogCreated;
-    Integer recordid;
+    String state=null;
+    int recordidEdit;
+
+    // flagmentでは引数つきのコンストラクタは作れないので、こういう関数を作る
+    public static PlanAddDialogFragment newInstance(int planrecordid) {
+        PlanAddDialogFragment fragment = new PlanAddDialogFragment();
+        Bundle b = new Bundle();
+        b.putInt("planrecordid", planrecordid);
+        fragment.setArguments(b);
+        return fragment;
+    }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         helper = new SimpleDatabaseHelper(getContext());
+
         // Use the Builder class for convenient dialog construction
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
@@ -60,6 +71,54 @@ public class PlanAddDialogFragment extends DialogFragment {
 
         planUpdateButton.setOnClickListener(updateButtonOnClickLister);
 
+        recordidEdit = getArguments().getInt("planrecordid");// 取得
+        if (recordidEdit==-1){
+            // 新規登録
+            state = "new";
+        } else{
+            state = "edit";
+            // 編集
+            Cursor cs;
+            String sql;
+            String name=null;
+            String starttime=null;
+            String dowAll=null;
+            Integer interval=0;
+            Integer timewidth=0;
+
+            // 現在のプラン情報取得
+            sql = String.format("select * from plan where planrecordid = %d", recordidEdit);
+            try(SQLiteDatabase db = helper.getReadableDatabase()) {
+                cs = db.rawQuery(sql, null);
+                if(cs.moveToNext()){
+                    // get value
+                    name = cs.getString(cs.getColumnIndex("name"));
+                    dowAll = cs.getString(cs.getColumnIndex("dow"));
+                    interval = cs.getInt(cs.getColumnIndex("interval"));
+                    starttime = cs.getString(cs.getColumnIndex("starttime"));
+                    timewidth = cs.getInt(cs.getColumnIndex("timewidth"));
+                }
+            }
+
+            // 値をセット
+            EditTextName.setText(name);
+            EditTextWeekInterval.setText(String.valueOf(interval));
+            EditTextTimeStart.setText(starttime);
+            EditTextTimeLength.setText(String.valueOf(timewidth));
+            String[] dowSplited = dowAll.split(",");
+            for (int i=0; i<dowSplited.length; i++){
+                switch(dowSplited[i]){
+                    case "0": CheckBoxSat.setChecked(true);break;
+                    case "1": CheckBoxSun.setChecked(true);break;
+                    case "2": CheckBoxMon.setChecked(true);break;
+                    case "3": CheckBoxTue.setChecked(true);break;
+                    case "4": CheckBoxWed.setChecked(true);break;
+                    case "5": CheckBoxThu.setChecked(true);break;
+                    case "6": CheckBoxFri.setChecked(true);break;
+                }
+            }
+        }
+
         builder.setView(content);
 
         builder.setMessage("登録/編集/削除")
@@ -73,55 +132,35 @@ public class PlanAddDialogFragment extends DialogFragment {
         return alertDialogCreated;
     }
 
+    Integer getRecordCount(String sql){
+        Integer recordCount = -1;
+        Cursor cs;
+        try(SQLiteDatabase db = helper.getReadableDatabase()) {
+            cs = db.rawQuery(sql, null);
+            try {
+                if (cs.moveToNext()) {
+                    recordCount = cs.getInt(0);
+                }
+            } finally {
+                cs.close();
+            }
+        }
+        return recordCount;
+    }
+
     // update/insert button click lister
     View.OnClickListener updateButtonOnClickLister = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            int recordCount=-1;
-            String sql="";
-            Cursor cursor;
-
-            String itemid = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());// itemidは登録日時
-            String startdate = new SimpleDateFormat("yyyyMMdd").format(new Date());// 作成/編集日をあてておく
-            Integer version = 1;// 登録時は1。編集ごとに増やしていく
-
-            // レコード数確認
-            Integer recordCountAll = 0;
-            sql = String.format("select count(*) from plan");
-            try (SQLiteDatabase db = helper.getReadableDatabase()) {
-                cursor = db.rawQuery(sql, null);
-                try {
-                    if (cursor.moveToNext()) {
-                        recordCountAll = cursor.getInt(0);
-                    }
-                } finally {
-                    cursor.close();
-                }
-            }
-
-            // 新しいrecordidの決定
-            if (recordCountAll==0){
-                recordid = 0;
-            } else{
-                // recordidのmax読み取り
-                sql = String.format("select max(recordid) from plan");
-                try (SQLiteDatabase db = helper.getReadableDatabase()) {
-                    cursor = db.rawQuery(sql, null);
-                    try {
-                        if (cursor.moveToNext()) {
-                            recordid = cursor.getInt(0);
-                        }
-                    } finally {
-                        cursor.close();
-                    }
-                }
-                recordid += 1; // 新しいレコードは1つ足したIDとする
-            }
-
+            String sql;
+            int planrecordid=-1;
+            int itemid=-1;
+            Integer version=-1;// 登録時は1。編集ごとに増やしていく
+            Integer isvalid;
+            String startdate = new SimpleDateFormat("yyyyMMdd").format(new Date());// 作成日をあてておく
 
             // 設定内容を取得
             String name = EditTextName.getText().toString();
-            Integer isvalid = 1;
             Integer interval = Integer.parseInt(EditTextWeekInterval.getText().toString());
             String starttime = EditTextTimeStart.getText().toString();
             Integer timewidth = Integer.parseInt(EditTextTimeLength.getText().toString());
@@ -135,43 +174,51 @@ public class PlanAddDialogFragment extends DialogFragment {
             if (CheckBoxFri.isChecked()){ dow += ",6"; }
             dow = dow.substring(1);//初めのカンマを除く
 
+            // 新しいrecordid, itemid
+            planrecordid = 0;
+            if (getRecordCount("select count(*) from plan")>0){
+                planrecordid = getRecordCount("select max(planrecordid) from plan") + 1;// recordidのmax+1
+            }
+
+            isvalid = 1;
+            if (state=="new"){
+                // 新規登録
+                if (planrecordid==0){
+                    itemid = 0;
+                }else{
+                    itemid = getRecordCount("select max(itemid) from plan") + 1;// itemidのmax+1
+                }
+                version = 1;
+
+            } else if (state=="edit"){
+                // 編集の場合、itemidは変えない、versionは+1
+                itemid = getRecordCount(String.format("select itemid from plan where planrecordid = %d", recordidEdit));
+                version = getRecordCount(String.format("select version from plan where planrecordid = %d", recordidEdit))+1;//versionを一つ上げる
+            }
+
             // tableにinsert
             sql = String.format(
-                    "insert into plan (recordid, itemid, isvalid, name, dow, interval, starttime, timewidth, startdate, version) values (%d,'%s', %d, '%s', '%s', %d, '%s', %d, '%s', %d);",
-                    recordid,
-                    itemid,
-                    isvalid,
-                    name,
-                    dow,
-                    interval,
-                    starttime,
-                    timewidth,
-                    startdate,
-                    version
-            );
-            // update
-            // sql = String.format("update diary set diary = '%s' where date = '%s'", diaryString, dateString);
-            try (SQLiteDatabase db = helper.getWritableDatabase()) {
-                db.execSQL(sql);
+                    "insert into plan (" +
+                            "planrecordid, itemid, version, isvalid, startdate, " +
+                            "name, dow, interval, starttime, timewidth) values (" +
+                            "%d, %d,%d,%d,'%s'," +
+                            "'%s','%s',%d,'%s',%d);",
+                    planrecordid, itemid, version, isvalid, startdate,
+                    name, dow, interval, starttime, timewidth);
+            try (SQLiteDatabase db = helper.getWritableDatabase()) { db.execSQL(sql); }
+
+            // 編集の場合、古いレコードを無効にする
+            if (state=="edit") {
+                // plan
+                sql = String.format("update plan set isvalid = 0 where planrecordid = %d;", recordidEdit);
+                try (SQLiteDatabase db = helper.getWritableDatabase()) { db.execSQL(sql); }
+                // do
+                sql = String.format("update do set isvalid = 0 where planrecordid = %d;", recordidEdit);
+                try (SQLiteDatabase db = helper.getWritableDatabase()) { db.execSQL(sql); }
             }
 
             // ダイアログを閉じる
             alertDialogCreated.dismiss();
-
-            /*
-            // テーブルのレコード数を取得
-            sql = String.format("select count(*) from plan");
-            try(SQLiteDatabase db = helper.getReadableDatabase()) {
-                cursor = db.rawQuery(sql, null);
-                try {
-                    if (cursor.moveToNext()) {
-                        recordCount = cursor.getInt(0);
-                    }
-                } finally {
-                    cursor.close();
-                }
-            }
-            */
         }
     };
 }
