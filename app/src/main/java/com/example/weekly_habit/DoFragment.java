@@ -11,6 +11,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.widget.TextView;
 import android.support.constraint.Guideline;
+import android.widget.Toast;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,6 +21,7 @@ import java.util.Date;
 // Fragmentクラスを継承
 public class DoFragment extends Fragment {
     private SimpleDatabaseHelper helper = null;
+    Common common;
     int MILLIS_OF_DAY = 1000 * 60 * 60 * 24;
     View view;
     String stringWeekStart;
@@ -56,9 +58,14 @@ public class DoFragment extends Fragment {
         // db接続用
         helper = new SimpleDatabaseHelper(getContext());
 
+        // 共通関数クラス
+        common = Common.newInstance();
+        common.setHelper(helper);
+
         // 有効プラン読み取り
         planCount = getPlans();
         if (planCount==0){
+            Toast.makeText(getContext(),"planを作成してください",Toast.LENGTH_SHORT).show();
             return view;//ここで処理終了
         }
 
@@ -91,7 +98,7 @@ public class DoFragment extends Fragment {
 
         // planの有効レコード数確認
         sql = String.format("select count(*) from plan where isvalid = 1");
-        planCount = getRecordCount(sql);
+        planCount = common.getRecordCount(sql);
 
         // 存在しなければここで終わり
         if (planCount==0){
@@ -122,22 +129,6 @@ public class DoFragment extends Fragment {
         }
         // プラン数を返す
         return planCount;
-    }
-
-    Integer getRecordCount(String sql){
-        Integer recordCount = -1;
-        Cursor cs;
-        try(SQLiteDatabase db = helper.getReadableDatabase()) {
-            cs = db.rawQuery(sql, null);
-            try {
-                if (cs.moveToNext()) {
-                    recordCount = cs.getInt(0);
-                }
-            } finally {
-                cs.close();
-            }
-        }
-        return recordCount;
     }
 
     void makeDoRecords(Integer planCount){
@@ -171,7 +162,7 @@ public class DoFragment extends Fragment {
                             "planrecordid='%s'",// 該当プランレコード
                     stringWeekStart,
                     planrecordidAll[i]);
-            recordCount = getRecordCount(sql);
+            recordCount = common.getRecordCount(sql);
             if (recordCount > 0){continue;}
 
             // 対象週でなければskip
