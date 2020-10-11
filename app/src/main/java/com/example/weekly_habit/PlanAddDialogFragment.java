@@ -34,6 +34,8 @@ public class PlanAddDialogFragment extends DialogFragment {
     EditText EditTextTimeStart;
     EditText EditTextTimeLength;
     AlertDialog alertDialogCreated;
+    Button planUpdateButton;
+    Button planDeleteButton;
     String state=null;
     int recordidEdit;
 
@@ -56,7 +58,9 @@ public class PlanAddDialogFragment extends DialogFragment {
         LayoutInflater inflater = (LayoutInflater)getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View content = inflater.inflate(R.layout.fragment_plan_add_dialog, null);
 
-        Button planUpdateButton = content.findViewById(R.id.planUpdateButton);
+        planUpdateButton = content.findViewById(R.id.planUpdateButton);
+        planDeleteButton = content.findViewById(R.id.PlanDeleteButton);
+
         EditTextName = content.findViewById(R.id.EditTextName);// plan name
         CheckBoxMon = content.findViewById(R.id.checkBoxMon);
         CheckBoxTue = content.findViewById(R.id.checkBoxTue);
@@ -70,13 +74,19 @@ public class PlanAddDialogFragment extends DialogFragment {
         EditTextTimeLength = content.findViewById(R.id.timeLength);
 
         planUpdateButton.setOnClickListener(updateButtonOnClickLister);
+        planDeleteButton.setOnClickListener(deleteButtonOnClickLister);
 
         recordidEdit = getArguments().getInt("planrecordid");// 取得
         if (recordidEdit==-1){
             // 新規登録
             state = "new";
+            planUpdateButton.setText("登録");
+            planDeleteButton.setVisibility(View.INVISIBLE);//新規登録では非表示
         } else{
             state = "edit";
+            planUpdateButton.setText("更新");
+            planDeleteButton.setVisibility(View.VISIBLE);
+            planDeleteButton.setText("削除");
             // 編集
             Cursor cs;
             String sql;
@@ -209,16 +219,34 @@ public class PlanAddDialogFragment extends DialogFragment {
 
             // 編集の場合、古いレコードを無効にする
             if (state=="edit") {
-                // plan
-                sql = String.format("update plan set isvalid = 0 where planrecordid = %d;", recordidEdit);
-                try (SQLiteDatabase db = helper.getWritableDatabase()) { db.execSQL(sql); }
-                // do
-                sql = String.format("update do set isvalid = 0 where planrecordid = %d;", recordidEdit);
-                try (SQLiteDatabase db = helper.getWritableDatabase()) { db.execSQL(sql); }
+                toBeInvalid(recordidEdit);
             }
 
             // ダイアログを閉じる
             alertDialogCreated.dismiss();
         }
     };
+
+    void toBeInvalid(Integer planrecordid){
+        // 編集 or 削除時に古いレコードのisvalidを0にする
+        String sql;
+        // plan
+        sql = String.format("update plan set isvalid = 0 where planrecordid = %d;", planrecordid);
+        try (SQLiteDatabase db = helper.getWritableDatabase()) { db.execSQL(sql); }
+        // do
+        sql = String.format("update do set isvalid = 0 where planrecordid = %d;", planrecordid);
+        try (SQLiteDatabase db = helper.getWritableDatabase()) { db.execSQL(sql); }
+    }
+
+    // delete button click lister //編集時のみ動作
+    View.OnClickListener deleteButtonOnClickLister = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            // isvalidを0にする planとdoで
+            toBeInvalid(recordidEdit);
+            // ダイアログを閉じる
+            alertDialogCreated.dismiss();
+        }
+    };
+
 }
