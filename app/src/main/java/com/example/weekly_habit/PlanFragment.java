@@ -47,6 +47,9 @@ public class PlanFragment extends Fragment {
         view = inflater.inflate(R.layout.fragment_plan, null);
         planLinearLayout = view.findViewById(R.id.planLinearLayout);
 
+        // 更新する場合もあるので一度全てクリア
+        planLinearLayout.removeAllViews();
+
         // プラン取得
         planCount = getPlan();
 

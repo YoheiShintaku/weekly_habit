@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
 import android.text.SpannableStringBuilder;
 import android.view.LayoutInflater;
@@ -222,8 +223,8 @@ public class PlanAddDialogFragment extends DialogFragment {
                 toBeInvalid(recordidEdit);
             }
 
-            // ダイアログを閉じる
-            alertDialogCreated.dismiss();
+            // ダイアログを閉じて戻る
+            backToMainDisplay();
         }
     };
 
@@ -238,14 +239,23 @@ public class PlanAddDialogFragment extends DialogFragment {
         try (SQLiteDatabase db = helper.getWritableDatabase()) { db.execSQL(sql); }
     }
 
+    void backToMainDisplay(){
+        // ダイアログを閉じる
+        alertDialogCreated.dismiss();
+
+        // 画面表示の更新
+        ((MainActivity) getActivity()).replacePlanFramgent();
+    }
+
     // delete button click lister //編集時のみ動作
     View.OnClickListener deleteButtonOnClickLister = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             // isvalidを0にする planとdoで
             toBeInvalid(recordidEdit);
-            // ダイアログを閉じる
-            alertDialogCreated.dismiss();
+
+            // ダイアログを閉じて戻る
+            backToMainDisplay();
         }
     };
 
