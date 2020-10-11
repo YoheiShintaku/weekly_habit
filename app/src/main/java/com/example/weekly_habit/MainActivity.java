@@ -49,8 +49,10 @@ public class MainActivity extends AppCompatActivity {
         createTables();
 
         // コードからFragmentを追加
-        addPlanFramgent();
-
+        PlanFragment fragment = new PlanFragment();// Fragmentを作成します
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
+        transaction.add(R.id.topFrameLayout, fragment);// 初回はadd
+        transaction.commit();
     }
 
     void createTables(){
@@ -97,13 +99,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void addPlanFramgent(){
-        PlanFragment fragment = new PlanFragment();// Fragmentを作成します
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
-        transaction.add(R.id.topFrameLayout, fragment);// add
-        transaction.commit();
-    }
-
     public void replacePlanFramgent(){
         PlanFragment fragment = new PlanFragment();// Fragmentを作成します
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
@@ -111,10 +106,12 @@ public class MainActivity extends AppCompatActivity {
         transaction.commit();
     }
 
+    // plan
     public void button1_onClick(View view){
         replacePlanFramgent();
     }
 
+    // do
     public void button2_onClick(View view){
         DoFragment fragment = new DoFragment();// Fragmentを作成します
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
@@ -122,6 +119,13 @@ public class MainActivity extends AppCompatActivity {
         transaction.replace(R.id.topFrameLayout, fragment);// 1つ目の引数は対象のViewGroupのID、2つ目の引数は追加するfragment
         transaction.commit();// 最後にcommitを使用することで変更を反映します
     }
+
+    // check
     public void button3_onClick(View view){
+        CheckFragment fragment = new CheckFragment();// Fragmentを作成します
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();// Fragmentの追加や削除といった変更を行う際は、Transactionを利用します
+        // 新しく追加を行うのでaddを使用します // 他にも、よく使う操作で、replace removeといったメソッドがあります
+        transaction.replace(R.id.topFrameLayout, fragment);// 1つ目の引数は対象のViewGroupのID、2つ目の引数は追加するfragment
+        transaction.commit();// 最後にcommitを使用することで変更を反映します
     }
 }
