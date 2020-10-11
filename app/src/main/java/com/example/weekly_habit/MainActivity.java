@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
         // テーブル作成（存在しない場合）
         helper = new SimpleDatabaseHelper(this);// db接続用
+        //dropTables();//応急対応
         createTables();
 
         // コードからFragmentを追加
@@ -54,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         transaction.add(R.id.topFrameLayout, fragment);// 初回はadd
         transaction.commit();
     }
+
 
     void createTables(){
         // テーブルがなければ作成
@@ -94,6 +96,19 @@ public class MainActivity extends AppCompatActivity {
                         + ", timewidth INTEGER"
                         + ")"
         );
+        try(SQLiteDatabase db = helper.getWritableDatabase()) {
+            db.execSQL(sql);
+        }
+    }
+
+    void dropTables(){
+        // 余計なテーブルがあって落ちる時の応急対応
+        String sql=null;
+        sql=String.format("drop table plan");
+        try(SQLiteDatabase db = helper.getWritableDatabase()) {
+            db.execSQL(sql);
+        }
+        sql=String.format("drop table do");
         try(SQLiteDatabase db = helper.getWritableDatabase()) {
             db.execSQL(sql);
         }

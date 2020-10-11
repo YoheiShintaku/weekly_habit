@@ -90,8 +90,8 @@ public class PlanFragment extends Fragment {
     // 登録済プラン取得
     Integer getPlan() {
         Integer planCount = 0;
-        String sql;
-        Cursor cs;
+        String sql=null;
+        Cursor cs=null;
         Integer recordCount;
 
         // 有効プランがなければ進まない
@@ -114,7 +114,7 @@ public class PlanFragment extends Fragment {
         int cnt = 0;
 
         // 有効プラン情報をdbから取得し配列に格納
-        sql = String.format("select * from plan where isvalid = 1;");
+        sql = String.format("select * from plan where isvalid = 1 order by itemid;");
         try(SQLiteDatabase db = helper.getReadableDatabase()) {
             cs = db.rawQuery(sql, null);
             while(cs.moveToNext()){
