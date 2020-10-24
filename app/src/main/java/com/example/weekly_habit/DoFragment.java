@@ -4,7 +4,10 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.database.Cursor;
@@ -41,11 +44,21 @@ public class DoFragment extends Fragment {
     String[] starttimeAll;
     Integer[] timewidthAll;
     String[] startdateAll;
+    GestureDetector mDetector;
+    Integer add_day_by_swipe;
 
+    // ずらず日を持つインスタンス
+    public static DoFragment newInstance(Integer i) {
+        DoFragment fragment = new DoFragment();
+        Bundle b = new Bundle();
+        b.putInt("add_day_by_swipe", i);
+        fragment.setArguments(b);
+        return fragment;
+    }
 
-    // Fragmentで表示するViewを作成するメソッド
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        add_day_by_swipe = getArguments().getInt("add_day_by_swipe");
         Integer planCount = -1;
 
         super.onCreateView(inflater, container, savedInstanceState);
@@ -61,6 +74,10 @@ public class DoFragment extends Fragment {
         // 共通関数クラス
         common = Common.newInstance();
         common.setHelper(helper);
+
+        // swipe検知用
+        mDetector = new GestureDetector(getContext(), new MyGestureListener());
+        constraintLayoutDo.setOnTouchListener(touchListener);
 
         // 有効プラン読み取り
         planCount = getPlans();
@@ -130,7 +147,8 @@ public class DoFragment extends Fragment {
         // プラン数を返す
         return planCount;
     }
-
+    String stringWeekNow;
+    Calendar calendarWeekNow;
     void makeDoRecords(Integer planCount){
         Integer dorecordid = -1;
         Integer recordCount;
@@ -150,11 +168,23 @@ public class DoFragment extends Fragment {
         Integer dowNumber = calendar.get(Calendar.DAY_OF_WEEK);//Sun:1, Sat:7
         if (dowNumber==7){dowNumber=0;}//0:Sat
         calendar.add(Calendar.DAY_OF_MONTH, dowNumber*-1);
+
+        // 現在週
+        stringWeekNow = new SimpleDateFormat("yyyyMMdd").format(calendar.getTime());
+        calendarWeekNow = string2Calendar(stringWeekNow);
+
+        // 表示対象　swipe検知によりずらす
+        calendar.add(Calendar.DAY_OF_MONTH, add_day_by_swipe);
+
         stringWeekStart = new SimpleDateFormat("yyyyMMdd").format(calendar.getTime());
         calendarWeekStart = string2Calendar(stringWeekStart);
 
         // プランのループ
         for (int i=0; i<planCount; i++){
+            // 過去ならskip
+            float diffMillis = calendarWeekStart.getTimeInMillis() - calendarWeekNow.getTimeInMillis();
+            if (diffMillis<0){continue;}
+
             // すでにレコード作成済（初回表示でない）ならskip
             sql = String.format("select count(*) from do where " +
                             "isvalid=1 and " +  // 有効
@@ -430,4 +460,115 @@ public class DoFragment extends Fragment {
         }
     };
 
+
+    View.OnTouchListener touchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            // pass the events to the gesture detector
+            // a return value of true means the detector is handling it
+            // a return value of false means the detector didn't
+            // recognize the event
+            return mDetector.onTouchEvent(event);
+        }
+    };
+
+    // In the SimpleOnGestureListener subclass you should override
+    // onDown and any other gesture that you want to detect.
+    class MyGestureListener extends GestureDetector.SimpleOnGestureListener {
+
+        @Override
+        public boolean onFling(MotionEvent event1, MotionEvent event2,
+                               float velocityX, float velocityY) {
+            Log.d("TAG", "onFling: ");
+            // X軸最低スワイプ距離
+            int SWIPE_MIN_DISTANCE = 50;
+
+            // X軸最低スワイプスピード
+            int SWIPE_THRESHOLD_VELOCITY = 200;
+
+            // Y軸の移動距離　これ以上なら横移動を判定しない
+            int SWIPE_MAX_OFF_PATH = 250;
+            int dateToMove = 0;
+
+            try {
+
+                // 移動距離・スピード
+                float distance_x = Math.abs((event1.getX() - event2.getX()));
+                float velocity_x = Math.abs(velocityX);
+
+                // flickを検知
+                if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH) {
+                    // Y軸の移動距離が大きすぎる場合
+                    Log.d("TAG", "縦の移動距離が大きすぎ: ");
+                }
+                else if  (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+                    // 開始位置から終了位置の移動距離が指定値より大きい
+                    // X軸の移動速度が指定値より大きい
+                    Log.d("TAG", "右から左: ");
+                    dateToMove += 7;
+                }
+                else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+                    // 終了位置から開始位置の移動距離が指定値より大きい
+                    // X軸の移動速度が指定値より大きい
+                    Log.d("TAG", "左から右: ");
+                    dateToMove = -7;
+                }
+            } catch (Exception e) {
+                // TODO
+            }
+
+            if (Math.abs(dateToMove)>0){
+                // flickに応じて週をずらす
+                String string = "move to ";
+                if (dateToMove>0){
+                    string += "next week";
+                } else {
+                    string += "previous week";
+                }
+                Toast.makeText(getContext(), string, Toast.LENGTH_SHORT).show();
+
+                // アクティビティーにずらす日を与える
+                ((MainActivity) getActivity()).changeStartDay(dateToMove);
+
+                // 再構成
+                ((MainActivity) getActivity()).replaceDoFramgent();
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean onDown(MotionEvent event) {
+            Log.d("TAG","onDown: ");
+
+            // don't return false here or else none of the other
+            // gestures will work
+            return true;
+        }
+
+        @Override
+        public boolean onSingleTapConfirmed(MotionEvent e) {
+            Log.i("TAG", "onSingleTapConfirmed: ");
+            return true;
+        }
+
+        @Override
+        public void onLongPress(MotionEvent e) {
+            Log.i("TAG", "onLongPress: ");
+        }
+
+        @Override
+        public boolean onDoubleTap(MotionEvent e) {
+            Log.i("TAG", "onDoubleTap: ");
+            return true;
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2,
+                                float distanceX, float distanceY) {
+            Log.i("TAG", "onScroll: ");
+            return true;
+        }
+
+    }
 }
