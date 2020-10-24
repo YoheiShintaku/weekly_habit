@@ -289,7 +289,8 @@ public class DoFragment extends Fragment {
     void showTimeSchedule(){
         TextView textView;
         ConstraintLayout.LayoutParams layoutParams;
-        float widthPercent=(float)1/7;
+        float guidelineWidthPercent = (float)0.1;
+        float widthPercent=(float)(1-guidelineWidthPercent)/(float)7.5;
         float startx;
         int minuteToDp = 3;
         int textsize;

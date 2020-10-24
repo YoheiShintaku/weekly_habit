@@ -23,7 +23,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                app:layout_constraintGuide_begin="50dp" />
+                app:layout_constraintGuide_begin="150dp"
+                app:layout_constraintGuide_percent="0.1" />
 
             <android.support.constraint.Guideline
                 android:id="@+id/guidelineH"
@@ -31,14 +32,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 app:layout_constraintGuide_begin="50dp" />
-
-            <View
-                android:id="@+id/divider"
-                android:layout_width="395dp"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider"
-                tools:layout_editor_absoluteX="0dp"
-                tools:layout_editor_absoluteY="25dp" />
 
         </android.support.constraint.ConstraintLayout>
     </ScrollView>
