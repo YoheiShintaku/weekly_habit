@@ -345,7 +345,7 @@ public class DoFragment extends Fragment {
                 // 開始時刻を分に変換
                 try {
                     hhmm = starttime.split(":");
-                    starttimeMinute = Integer.parseInt(hhmm[0]) * 60 + Integer.parseInt(hhmm[1]) / 60;
+                    starttimeMinute = Integer.parseInt(hhmm[0]) * 60 + Integer.parseInt(hhmm[1]);
                 } catch (Exception e){ continue; }
 
                 // 曜日で横位置を決める
