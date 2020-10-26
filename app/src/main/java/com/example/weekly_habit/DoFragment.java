@@ -1,17 +1,18 @@
 package com.example.weekly_habit;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.support.constraint.Guideline;
 import android.widget.Toast;
@@ -30,8 +31,10 @@ public class DoFragment extends Fragment {
     String stringWeekStart;
     Calendar calendarWeekStart;
     ConstraintLayout constraintLayoutDo;
+    ConstraintLayout doTop;
     Guideline guidelineV;
     Guideline guidelineH;
+    ScrollView scrollViewDo;
 
     Integer[] planrecordidAll;//
     Integer[] itemidAll;//
@@ -46,7 +49,7 @@ public class DoFragment extends Fragment {
     String[] startdateAll;
     GestureDetector mDetector;
     Integer add_day_by_swipe;
-
+    ConstraintLayout constraintLayoutHead;
     // ずらず日を持つインスタンス
     public static DoFragment newInstance(Integer i) {
         DoFragment fragment = new DoFragment();
@@ -64,9 +67,12 @@ public class DoFragment extends Fragment {
         super.onCreateView(inflater, container, savedInstanceState);
 
         view = inflater.inflate(R.layout.fragment_do, null);
+        doTop = view.findViewById(R.id.doTop);
         constraintLayoutDo = view.findViewById(R.id.constraintLayoutDo);
         guidelineV = view.findViewById(R.id.guidelineV);
         guidelineH = view.findViewById(R.id.guidelineH);
+        constraintLayoutHead = view.findViewById(R.id.constraintLayoutHead);
+        scrollViewDo = view.findViewById(R.id.ScrollViewDo);
 
         // db接続用
         helper = new SimpleDatabaseHelper(getContext());
@@ -286,18 +292,25 @@ public class DoFragment extends Fragment {
         return calendar;
     }
 
+
+
     void showTimeSchedule(){
+        showDate();
+
+        showTime();
+
+        showItem();
+    }
+
+    void showDate(){
         TextView textView;
         ConstraintLayout.LayoutParams layoutParams;
         float guidelineWidthPercent = (float)0.1;
         float widthPercent=(float)(1-guidelineWidthPercent)/(float)7.5;
-        float startx;
-        int minuteToDp = 3;
-        int textsize;
         Calendar calendar;
+        float startx;
+        int textsize=10;
         String string;
-        String dowString=null;
-        textsize = 10;
 
         // ヘッダ部: 日（横軸）
         String[] dayOfWeek = new String[]{"土","日","月","火","水","木","金"};
@@ -306,14 +319,14 @@ public class DoFragment extends Fragment {
             calendar = (Calendar) calendarWeekStart.clone();
             calendar.add(Calendar.DAY_OF_MONTH, j);
             string = new SimpleDateFormat("M/d").format(calendar.getTime());
-            string += dayOfWeek[j];
+            string += "\n" + dayOfWeek[j];
 
             // 表示位置とサイズ
             layoutParams = new ConstraintLayout.LayoutParams(0, 0);
-            layoutParams.startToStart = R.id.guidelineV;
-            layoutParams.endToEnd = R.id.constraintLayoutDo;
-            layoutParams.topToTop = R.id.constraintLayoutDo;
-            layoutParams.bottomToTop = R.id.guidelineH;
+            layoutParams.startToStart = R.id.constraintLayoutHead;
+            layoutParams.endToEnd = R.id.constraintLayoutHead;
+            layoutParams.topToTop = R.id.constraintLayoutHead;
+            layoutParams.bottomToBottom = R.id.constraintLayoutHead;
             layoutParams.matchConstraintPercentWidth = widthPercent;
             startx = (float)1/7*j;
             layoutParams.horizontalBias = startx / (1 - widthPercent);
@@ -322,20 +335,27 @@ public class DoFragment extends Fragment {
             textView = new TextView(getContext());
             textView.setTextSize(textsize);
             textView.setText(string);
+            textView.setGravity(Gravity.CENTER);
             textView.setLayoutParams(layoutParams);
 
-            constraintLayoutDo.addView(textView);
+            constraintLayoutHead.addView(textView);
         }
+    }
 
-        // ヘッダ部：時間（縦軸）
+    void showTime(){
+        TextView textView;
+        ConstraintLayout.LayoutParams layoutParams;
+        int textsize=10;
+        int minuteToDp = 3;
+
+        // 時間（縦軸）
         for (int j=0; j<24; j++){
             layoutParams = new ConstraintLayout.LayoutParams(0, 60 * minuteToDp);
             layoutParams.startToStart = R.id.constraintLayoutDo;
-            layoutParams.endToStart = R.id.guidelineV;
-            layoutParams.topToTop = R.id.guidelineH;
-            layoutParams.matchConstraintPercentWidth = (float)1.0;
-            layoutParams.setMargins(0, 0, 0, 0);;
-            layoutParams.topMargin = 60 * minuteToDp * j;
+            layoutParams.endToStart = R.id.guidelineVdo;
+            layoutParams.topToTop = R.id.constraintLayoutDo;
+            //layoutParams.matchConstraintPercentWidth = (float)0.5;
+            layoutParams.setMargins(0, 60 * minuteToDp * j, 0, 0);;
 
             textView = new TextView(getContext());
             textView.setTextSize(textsize);
@@ -345,8 +365,19 @@ public class DoFragment extends Fragment {
 
             constraintLayoutDo.addView(textView);
         }
+    }
 
-        // テーブルから対象週のレコードを取得 1レコードずつ処理
+    void showItem(){
+        float guidelineWidthPercent = (float)0.1;
+        float widthPercent=(float)(1-guidelineWidthPercent)/(float)7.5;
+        TextView textView;
+        ConstraintLayout.LayoutParams layoutParams;
+        float startx;
+        int minuteToDp = 3;
+        int textsize;
+        textsize = 10;
+        Calendar calendar;
+
         int cnt;
         String sql;
         Cursor cs=null;
@@ -359,7 +390,7 @@ public class DoFragment extends Fragment {
         String[] hhmm;
         Integer starttimeMinute;
         Integer dowNumber;
-
+        // テーブルから対象週のレコードを取得 1レコードずつ処理
         cnt=0;
         sql = String.format("select * from do where week='%s' and isvalid=1", stringWeekStart);
         try(SQLiteDatabase db = helper.getReadableDatabase()) {
@@ -386,18 +417,19 @@ public class DoFragment extends Fragment {
                 startx = (float)1/7*dowNumber;
 
                 layoutParams = new ConstraintLayout.LayoutParams(0, (int)(timewidth * minuteToDp));
+                layoutParams.startToStart = R.id.guidelineVdo;
                 layoutParams.endToEnd = R.id.constraintLayoutDo;
-                layoutParams.topToTop = R.id.guidelineH;
-                layoutParams.startToStart = R.id.guidelineV;
+                layoutParams.topToTop = R.id.constraintLayoutDo;
                 //widthの残りが移動できる範囲で、それをbiasで決める
                 //widthが決まっていて、ある開始点startxに置きたい場合、
-                layoutParams.topMargin = starttimeMinute * minuteToDp;
                 layoutParams.matchConstraintPercentWidth = widthPercent;
                 layoutParams.horizontalBias = startx / (1 - widthPercent);
+                layoutParams.topMargin = (int)(starttimeMinute * minuteToDp);
 
                 textView = new TextView(getContext());
                 textView.setLayoutParams(layoutParams);
                 textView.setTextSize(textsize);
+                textView.setGravity(Gravity.CENTER);
                 textView.setText(name);// plan name
                 setBackGround(textView, isdone);
                 //textView.setId(i);
