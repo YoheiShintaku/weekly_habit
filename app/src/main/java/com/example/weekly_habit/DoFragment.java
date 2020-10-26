@@ -399,13 +399,9 @@ public class DoFragment extends Fragment {
                 textView.setLayoutParams(layoutParams);
                 textView.setTextSize(textsize);
                 textView.setText(name);// plan name
+                setBackGround(textView, isdone);
                 //textView.setId(i);
                 textView.setHint(String.valueOf(dorecordid));  // クリックイベントで使う
-                if (isdone==0){
-                    textView.setBackgroundColor(Color.LTGRAY);
-                } else if (isdone==1){
-                    textView.setBackgroundColor(Color.MAGENTA);
-                }
                 textView.setOnClickListener(doOnClickListener);// リスナーを登録
 
                 constraintLayoutDo.addView(textView);
@@ -415,6 +411,16 @@ public class DoFragment extends Fragment {
             }
         } finally {
             cs.close();
+        }
+    }
+
+    void setBackGround(TextView textView, int isdone){
+        if (isdone==0){
+            textView.setBackgroundColor(getResources().getColor(R.color.colorBackground));
+            textView.setAlpha((float)1);
+        } else if (isdone==1){
+            textView.setBackgroundColor(getResources().getColor(R.color.colorAccent));
+            textView.setAlpha((float)0.6);
         }
     }
 
@@ -453,11 +459,7 @@ public class DoFragment extends Fragment {
             try(SQLiteDatabase db = helper.getWritableDatabase()){ db.execSQL(sql); }
 
             // isdoneに応じて色を変える
-            if (isdone==0){
-                v.setBackgroundColor(Color.LTGRAY);
-            } else if (isdone==1){
-                v.setBackgroundColor(Color.MAGENTA);
-            }
+            setBackGround((TextView)v, isdone);
         }
     };
 

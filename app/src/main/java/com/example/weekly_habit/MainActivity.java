@@ -8,6 +8,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDelegate;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -29,6 +30,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import java.text.SimpleDateFormat;
 
+import static android.app.UiModeManager.MODE_NIGHT_YES;
+
 /*
  */
 
@@ -38,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 強制ダークテーマ
+        AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES);
 
         // レイアウト読み込み
         setContentView(R.layout.activity_main);

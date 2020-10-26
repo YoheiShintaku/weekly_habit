@@ -4,6 +4,8 @@ import android.graphics.Color;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +37,7 @@ public class PlanFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         Integer planCount;
+        TypedValue typedvalue;
 
         super.onCreateView(inflater, container, savedInstanceState);
 
@@ -60,10 +63,15 @@ public class PlanFragment extends Fragment {
 
         // 追加ボタン
         ImageButton imageButton = new ImageButton(getContext());
-        imageButton.setImageResource(R.drawable.plus);
-        imageButton.setLayoutParams(new LinearLayout.LayoutParams(200, 200));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(150,150);
+        lp.gravity = Gravity.LEFT;
+        lp.setMargins(50 ,20,0,0);
+        imageButton.setLayoutParams(lp);
+        imageButton.setImageResource(R.drawable.plus_white);
         imageButton.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        imageButton.setAlpha((float)0.3);
         imageButton.setOnClickListener(addPlanOnClickListener);
+        imageButton.setBackgroundResource(new TypedValue().resourceId);  // 背景を透明に
         planLinearLayout.addView(imageButton);
 
         return view;
@@ -139,7 +147,7 @@ public class PlanFragment extends Fragment {
         planLinearLayout.setGravity(1);
         LinearLayout.LayoutParams textLayoutParams;
         TextView textView;
-        int textsize = 30;
+        int textsize = 25;
         int width = ViewGroup.LayoutParams.MATCH_PARENT;
         int height = ViewGroup.LayoutParams.WRAP_CONTENT;
 
@@ -151,9 +159,11 @@ public class PlanFragment extends Fragment {
             textView.setLayoutParams(textLayoutParams);
             textView.setText(nameAll[i]);// plan name
             textView.setTextSize(textsize);
-            textView.setBackgroundColor(Color.LTGRAY);
+            textView.setBackgroundColor(getResources().getColor(R.color.colorBackground));
+            //textView.setAlpha((float)0.1);
             textView.setHint(String.valueOf(planrecordidAll[i]));  // クリックイベントで使う
             textView.setOnLongClickListener(planOnLongClickListener);// リスナーを登録
+            textView.setPadding(30,0,0,0);
 
             planLinearLayout.addView(textView);
         }

@@ -19,25 +19,43 @@
             android:id="@+id/button1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
             android:layout_weight="1"
+            android:background="@color/colorBackground"
             android:onClick="button1_onClick"
-            android:text="PLAN" />
+            android:text="PLAN"
+            android:textSize="25sp" />
 
         <Button
             android:id="@+id/button2"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
             android:layout_weight="1"
+            android:background="@color/colorBackground"
             android:onClick="button2_onClick"
-            android:text="DO" />
+            android:text="DO"
+            android:textSize="25sp" />
 
         <Button
             android:id="@+id/button3"
             android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
             android:layout_weight="1"
+            android:background="@color/colorBackground"
             android:onClick="button3_onClick"
-            android:text="CHECK" />
+            android:text="CHECK"
+            android:textSize="25sp" />
 
     </LinearLayout>
 
